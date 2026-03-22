@@ -3,8 +3,6 @@ import axios from "axios";
 const STORAGE_KEY = "iris_access_token";
 const BACKEND_URL_KEY = "iris_backend_url";
 const DEFAULT_PI_BACKEND_PORT = "8000";
-const envApiUrl = import.meta.env.VITE_API_URL as string | undefined;
-export const DEFAULT_PI_HINT = extractPiAddress(envApiUrl?.trim() ?? "");
 
 function isLikelyPiHost(hostname: string): boolean {
   if (!hostname) return false;
@@ -36,10 +34,6 @@ export function getStoredBackendUrl(): string | null {
   const fromStorage = localStorage.getItem(BACKEND_URL_KEY);
   if (fromStorage) {
     const normalized = normalizeBackendUrl(fromStorage);
-    return normalized || null;
-  }
-  if (envApiUrl) {
-    const normalized = normalizeBackendUrl(envApiUrl);
     return normalized || null;
   }
   return null;

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Server, Wifi } from "lucide-react";
-import { DEFAULT_PI_HINT, getStoredPiAddress, probeBackend, setStoredBackendUrl } from "../../lib/api";
+import { getStoredPiAddress, probeBackend, setStoredBackendUrl } from "../../lib/api";
 import "./Setup.css";
 
 export default function Setup() {
   const navigate = useNavigate();
-  const [backendInput, setBackendInput] = useState(getStoredPiAddress() ?? DEFAULT_PI_HINT);
+  const [backendInput, setBackendInput] = useState(getStoredPiAddress() ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
