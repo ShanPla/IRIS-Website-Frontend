@@ -1,0 +1,61 @@
+.alert-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  transition: border-color 0.2s;
+}
+
+.alert-card:hover {
+  border-color: #374151;
+}
+
+.alert-card--alarm {
+  border-color: rgba(248, 113, 113, 0.3);
+  background-color: rgba(248, 113, 113, 0.04);
+}
+
+.alert-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alert-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.alert-card-alarm-tag {
+  font-size: 0.7rem;
+  font-weight: 500;
+  background-color: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+.alert-card-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e5e7eb;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alert-card-time {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+  font-family: monospace;
+}
+

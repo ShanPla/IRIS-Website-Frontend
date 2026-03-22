@@ -1,0 +1,64 @@
+.topbar {
+  height: 56px;
+  background-color: #0f172a;
+  border-bottom: 1px solid #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin: 0;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.topbar-pi {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+.topbar-pi--connected {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+  background-color: rgba(74, 222, 128, 0.08);
+}
+
+.topbar-pi--disconnected {
+  color: #6b7280;
+  border-color: #374151;
+  background-color: transparent;
+}
+
+.topbar-user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.topbar-username {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+.topbar-role {
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+

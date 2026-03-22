@@ -1,0 +1,143 @@
+.logs {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.logs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.logs-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.logs-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logs-filters {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.filter-btn {
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid #1f2937;
+  background-color: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background-color: #1f2937;
+  color: #ffffff;
+}
+
+.filter-btn--active {
+  background-color: #22d3ee;
+  color: #000000;
+  border-color: #22d3ee;
+}
+
+.logs-refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #1f2937;
+  background: none;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logs-refresh-btn:hover {
+  color: #ffffff;
+  background-color: #1f2937;
+}
+
+.logs-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.logs-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.logs-error {
+  font-size: 0.875rem;
+  color: #f87171;
+}
+
+.logs-empty {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.logs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.page-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #1f2937;
+  background: none;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: #1f2937;
+  color: #ffffff;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
