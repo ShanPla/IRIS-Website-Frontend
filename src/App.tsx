@@ -7,6 +7,9 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Logs from "./pages/Logs/Logs";
 import Profiles from "./pages/Profiles/Profiles";
 import Settings from "./pages/Settings/Settings";
+import AdminAccounts from "./pages/AdminAccounts/AdminAccounts";
+import UserManagement from "./pages/UserManagement/UserManagement";
+import SystemHealth from "./pages/SystemHealth/SystemHealth";
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -42,6 +45,21 @@ export default function App() {
           <Route path="/settings" element={
             <ProtectedRoute>
               <AdminLayout><Settings /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-accounts" element={
+            <ProtectedRoute>
+              <AdminLayout><AdminAccounts /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/users" element={
+            <ProtectedRoute>
+              <AdminLayout><UserManagement /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/system-health" element={
+            <ProtectedRoute>
+              <AdminLayout><SystemHealth /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ScrollText, Users, Settings, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, ScrollText, Users, Settings, LogOut, ShieldCheck, Home, Activity } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import "./Sidebar.css";
 
@@ -8,6 +8,9 @@ const links = [
   { to: "/logs", label: "Event Logs", icon: ScrollText },
   { to: "/profiles", label: "Face Profiles", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/users", label: "User Management", icon: Home },
+  { to: "/admin-accounts", label: "Admin Accounts", icon: ShieldCheck },
+  { to: "/system-health", label: "System Health", icon: Activity },
 ];
 
 export default function Sidebar() {
