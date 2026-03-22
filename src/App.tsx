@@ -32,7 +32,7 @@ export default function App() {
         <Routes>
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <AdminLayout><Dashboard /></AdminLayout>
@@ -68,7 +68,7 @@ export default function App() {
               <AdminLayout><SystemHealth /></AdminLayout>
             </ProtectedRoute>
           } />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

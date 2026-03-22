@@ -32,9 +32,9 @@ export default function Setup() {
     <div className="setup-page">
       <div className="setup-card">
         <div className="setup-icon"><Server size={22} /></div>
-        <h1 className="setup-title">Connect to IRIS Backend</h1>
+        <h1 className="setup-title">Connect to Raspberry Pi</h1>
         <p className="setup-desc">
-          Enter the IP address of the Raspberry Pi running the IRIS backend. Port defaults to 8000.
+          Enter the real LAN IP address of your Raspberry Pi device running IRIS. Port defaults to 8000.
         </p>
         <div className="setup-field">
           <label>Raspberry Pi IP Address</label>
@@ -52,7 +52,7 @@ export default function Setup() {
           {saving ? "Connecting..." : "Connect & Continue"}
         </button>
         <p className="setup-hint">
-          For local testing: <code>127.0.0.1:8000</code>
+          Example Pi IP: <code>192.168.1.120:8000</code>
         </p>
       </div>
     </div>

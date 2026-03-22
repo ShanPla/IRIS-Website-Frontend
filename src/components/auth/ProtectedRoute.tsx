@@ -14,11 +14,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
 
-  if (!hasBackendUrlConfigured()) {
-    return <Navigate to="/setup" replace state={{ from: location }} />;
+  if (!session) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (!session) {
+  if (!hasBackendUrlConfigured()) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
