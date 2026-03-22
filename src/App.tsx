@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Sidebar from "./components/layout/Sidebar/Sidebar";
+import Topbar from "./components/layout/Topbar/Topbar";
 import Login from "./pages/Login/Login";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Logs from "./pages/Logs/Logs";
@@ -16,7 +17,10 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-gray-950 text-white">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Topbar />
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,27 @@
+.snapshot-card {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #1f2937;
+}
+
+.snapshot-card--sm { width: 56px; height: 40px; }
+.snapshot-card--md { width: 80px; height: 56px; }
+.snapshot-card--lg { width: 120px; height: 80px; }
+
+.snapshot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.snapshot-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+}
