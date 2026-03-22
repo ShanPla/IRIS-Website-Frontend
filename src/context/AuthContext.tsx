@@ -4,6 +4,7 @@ import {
   getStoredBackendUrl,
   getStoredToken,
   setStoredBackendUrl,
+  setStoredPiAddress,
   setStoredToken,
 } from "../lib/api";
 import type { AuthSession, AuthUser, UserRole } from "../types/iris";
@@ -12,7 +13,7 @@ interface AuthContextType {
   session: AuthSession | null;
   bootstrapping: boolean;
   login: (username: string, password: string) => Promise<boolean>;
-  logout: (options?: { clearBackend?: boolean }) => void;
+  logout: (options?: { clearBackend?: boolean; clearPi?: boolean }) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -86,11 +87,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = (options?: { clearBackend?: boolean }) => {
+  const logout = (options?: { clearBackend?: boolean; clearPi?: boolean }) => {
     const shouldClearBackend = options?.clearBackend ?? true;
+    const shouldClearPi = options?.clearPi ?? true;
     setStoredToken(null);
     if (shouldClearBackend) {
       setStoredBackendUrl(null);
+    }
+    if (shouldClearPi) {
+      setStoredPiAddress(null);
     }
     setSession(null);
   };

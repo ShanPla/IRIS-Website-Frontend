@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Activity, RefreshCw, Server, ShieldCheck, Users, Wifi } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { apiClient, getStoredPiAddress, probeBackend, setStoredBackendUrl } from "../../lib/api";
+import { apiClient, getStoredPiAddress, normalizePiAddress, setStoredPiAddress } from "../../lib/api";
 import "./Setup.css";
 
 interface BackendAdminAccount {
@@ -15,7 +14,6 @@ interface BackendAppUser {
 
 export default function Setup() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
   const [backendInput, setBackendInput] = useState(getStoredPiAddress() ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -55,16 +53,15 @@ export default function Setup() {
     }
     setSaving(true);
     setError("");
-    const probe = await probeBackend(backendInput);
-    if (!probe.ok) {
-      setError(probe.message);
+    const normalizedPi = normalizePiAddress(backendInput);
+    if (!normalizedPi) {
+      setError("Invalid Raspberry Pi IP address.");
       setSaving(false);
       return;
     }
-    setStoredBackendUrl(probe.normalizedUrl);
+    setStoredPiAddress(normalizedPi);
     setSaving(false);
-    logout({ clearBackend: false });
-    navigate("/login", { replace: true });
+    navigate("/dashboard", { replace: true });
   };
 
   return (

@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, Save, Shield, Wifi } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { apiClient, getStoredPiAddress, probeBackend, setStoredBackendUrl } from "../../lib/api";
+import { apiClient, getStoredPiAddress, normalizePiAddress, setStoredPiAddress } from "../../lib/api";
 import type { SecurityMode } from "../../types/iris";
 import "./Settings.css";
 
@@ -17,9 +15,6 @@ interface SystemConfigResponse {
 }
 
 export default function Settings() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
   const [mode, setMode] = useState<SecurityMode>("home");
   const [sensitivity, setSensitivity] = useState(50);
   const [alarmDelay, setAlarmDelay] = useState(10);
@@ -82,13 +77,11 @@ export default function Settings() {
   const handleSaveConnection = async () => {
     if (!piAddress.trim()) { setError("Please enter a Raspberry Pi IP."); return; }
     setSavingConnection(true);
-    const probe = await probeBackend(piAddress);
-    if (!probe.ok) { setError(probe.message); setSavingConnection(false); return; }
-    setStoredBackendUrl(probe.normalizedUrl);
+    const normalizedPi = normalizePiAddress(piAddress);
+    if (!normalizedPi) { setError("Invalid Raspberry Pi IP address."); setSavingConnection(false); return; }
+    setStoredPiAddress(normalizedPi);
     setError("");
-    logout({ clearBackend: false });
     setSavingConnection(false);
-    navigate("/login", { replace: true });
   };
 
   return (
@@ -171,7 +164,7 @@ export default function Settings() {
       {/* Pi Connection */}
       <section className="settings-section">
         <div className="settings-section-title"><Wifi size={16} />Raspberry Pi Connection</div>
-        <p className="settings-section-desc">Change the connected Raspberry Pi IP. This will log you out.</p>
+        <p className="settings-section-desc">Change the connected Raspberry Pi IP used for device identification.</p>
         <div className="settings-input-row">
           <label>Pi IP Address</label>
           <input type="text" value={piAddress} onChange={(e) => setPiAddress(e.target.value)} className="settings-input" placeholder="e.g. 192.168.1.120" disabled={savingConnection} />
