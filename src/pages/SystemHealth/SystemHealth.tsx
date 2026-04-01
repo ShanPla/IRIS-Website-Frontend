@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
-import { Bell, Clock, Home, RefreshCw, Wifi, Camera } from "lucide-react";
+import { Bell, Clock, Home, RefreshCw, Wifi, Camera, Users } from "lucide-react";
 import { apiClient } from "../../lib/api";
 import "./SystemHealth.css";
 
 interface SystemStatusResponse { mode: "home" | "away"; alarm_active: boolean; updated_at: string; }
 interface EventsResponse { items: Array<{ timestamp: string }>; total: number; }
-interface CameraHealth { cv2_available: boolean; engine_running: boolean; camera_opened: boolean; camera_ready: boolean; }
+interface CameraHealth {
+  cv2_available: boolean;
+  engine_running: boolean;
+  camera_opened: boolean;
+  camera_ready: boolean;
+  latest_frame_ts?: number | null;
+  known_faces?: number;
+}
 
 export default function SystemHealth() {
   const [mode, setMode] = useState<"home" | "away">("home");
@@ -14,11 +21,17 @@ export default function SystemHealth() {
   const [lastDetection, setLastDetection] = useState<string | null>(null);
   const [totalEvents, setTotalEvents] = useState(0);
   const [cameraHealth, setCameraHealth] = useState<CameraHealth | null>(null);
+  const [knownFaces, setKnownFaces] = useState<number | null>(null);
+  const [latestFrameTs, setLatestFrameTs] = useState<number | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState("Never");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => { void loadHealth(); }, []);
+  useEffect(() => {
+    void loadHealth();
+    const interval = setInterval(() => { void loadHealth(); }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   async function loadHealth() {
     setLoading(true); setError("");
@@ -38,14 +51,25 @@ export default function SystemHealth() {
       try {
         const camRes = await apiClient.get<CameraHealth & { status: string }>("/health/camera");
         setCameraHealth(camRes.data);
+        setKnownFaces(camRes.data.known_faces ?? null);
+        setLatestFrameTs(camRes.data.latest_frame_ts ?? null);
       } catch {
         setCameraHealth(null);
+        setKnownFaces(null);
+        setLatestFrameTs(null);
       }
     } catch {
       setError("Failed to load system health from backend.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function frameAgeDisplay(): { label: string; type: "good" | "warn" } {
+    if (latestFrameTs === null) return { label: "N/A", type: "warn" };
+    const ageMs = Date.now() - latestFrameTs * 1000;
+    const label = ageMs < 1000 ? `${ageMs}ms ago` : `${(ageMs / 1000).toFixed(1)}s ago`;
+    return { label, type: ageMs < 2000 ? "good" : "warn" };
   }
 
   return (
@@ -89,6 +113,18 @@ export default function SystemHealth() {
           label="State Updated"
           value={stateUpdatedAt ? new Date(stateUpdatedAt).toLocaleString() : "Unknown"}
           type="neutral"
+        />
+        <StatusCard
+          icon={<Users size={18} />}
+          label="Known Faces"
+          value={knownFaces !== null ? String(knownFaces) : "N/A"}
+          type={knownFaces !== null ? "good" : "neutral"}
+        />
+        <StatusCard
+          icon={<Clock size={18} />}
+          label="Last Frame"
+          value={frameAgeDisplay().label}
+          type={frameAgeDisplay().type}
         />
       </div>
     </div>
