@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, ShieldAlert, ShieldCheck, BellOff, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 import { apiClient, buildApiUrl, getStoredBackendUrl, getStoredToken } from "../../lib/api";
+import AuthImage from "../../components/ui/AuthImage";
 import "./Dashboard.css";
 
 interface SystemStatus { mode: "home" | "away"; alarm_active: boolean; updated_at: string; }
@@ -187,11 +188,12 @@ export default function Dashboard() {
         <p className="feed-label">Latest Recognition</p>
         {latestEvent ? (
           <div className="latest-card">
-            {buildApiUrl(latestEvent.snapshot_path) ? (
-              <img src={buildApiUrl(latestEvent.snapshot_path)} alt="snapshot" className="latest-snapshot" />
-            ) : (
-              <div className="latest-snapshot-placeholder"><Camera size={24} className="text-gray-500" /></div>
-            )}
+            <AuthImage
+              src={buildApiUrl(latestEvent.snapshot_path)}
+              alt="snapshot"
+              className="latest-snapshot"
+              fallback={<div className="latest-snapshot-placeholder"><Camera size={24} className="text-gray-500" /></div>}
+            />
             <div className="latest-info">
               <p className={`latest-name ${colorMap[latestEvent.event_type]}`}>
                 {latestEvent.matched_name ?? labelMap[latestEvent.event_type]}
@@ -235,11 +237,12 @@ export default function Dashboard() {
                       : "bg-gray-900 border-gray-800"
                   }`}
                 >
-                  {buildApiUrl(event.snapshot_path) ? (
-                    <img src={buildApiUrl(event.snapshot_path)} alt="snapshot" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0"><Camera size={20} className="text-gray-600" /></div>
-                  )}
+                  <AuthImage
+                    src={buildApiUrl(event.snapshot_path)}
+                    alt="snapshot"
+                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                    fallback={<div className="w-14 h-14 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0"><Camera size={20} className="text-gray-600" /></div>}
+                  />
                   <div className="flex-1 min-w-0">
                     <p className={`font-semibold text-sm ${colorMap[event.event_type]}`}>
                       {labelMap[event.event_type]}{event.matched_name ? ` — ${event.matched_name}` : ""}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { apiClient, buildApiUrl, getApiErrorMessage, logApiError } from "../../lib/api";
 import AlertCard from "../../components/ui/AlertCard/AlertCard";
+import AuthImage from "../../components/ui/AuthImage";
 import type { BadgeStatus } from "../../components/ui/StatusBadge/StatusBadge";
 import "./Logs.css";
 
@@ -188,10 +189,10 @@ export default function Logs() {
                           )}
                         </div>
                         {detail.snapshot_path && (
-                          <img
-                            className="event-detail-snapshot"
+                          <AuthImage
                             src={buildApiUrl(detail.snapshot_path)}
                             alt="Event snapshot"
+                            className="event-detail-snapshot"
                           />
                         )}
                       </>

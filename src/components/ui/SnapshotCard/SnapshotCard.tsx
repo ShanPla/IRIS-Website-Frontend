@@ -1,4 +1,5 @@
 import { Camera } from "lucide-react";
+import AuthImage from "../AuthImage";
 import "./SnapshotCard.css";
 
 interface SnapshotCardProps {
@@ -10,13 +11,16 @@ interface SnapshotCardProps {
 export default function SnapshotCard({ url, alt = "snapshot", size = "md" }: SnapshotCardProps) {
   return (
     <div className={`snapshot-card snapshot-card--${size}`}>
-      {url ? (
-        <img src={url} alt={alt} className="snapshot-img" />
-      ) : (
-        <div className="snapshot-placeholder">
-          <Camera size={size === "sm" ? 14 : size === "lg" ? 32 : 20} />
-        </div>
-      )}
+      <AuthImage
+        src={url}
+        alt={alt}
+        className="snapshot-img"
+        fallback={
+          <div className="snapshot-placeholder">
+            <Camera size={size === "sm" ? 14 : size === "lg" ? 32 : 20} />
+          </div>
+        }
+      />
     </div>
   );
 }
