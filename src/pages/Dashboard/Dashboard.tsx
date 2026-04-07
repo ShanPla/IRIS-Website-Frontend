@@ -16,8 +16,8 @@ export default function Dashboard() {
   const [togglingMode, setTogglingMode] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (options?: { silent?: boolean }) => {
+    if (!options?.silent) setLoading(true);
     setError("");
     try {
       const [statusRes, eventsRes, allEventsRes] = await Promise.all([
@@ -39,7 +39,7 @@ export default function Dashboard() {
     void load();
 
     // Auto-refresh every 10 seconds
-    const refreshInterval = setInterval(() => { void load(); }, 10000);
+    const refreshInterval = setInterval(() => { void load({ silent: true }); }, 10000);
 
     // WebSocket live feed
     const base = getStoredBackendUrl();
