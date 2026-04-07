@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, ShieldAlert, ShieldCheck, BellOff, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
-import { apiClient, buildApiUrl, getStoredBackendUrl, getStoredToken } from "../../lib/api";
+import { apiClient, getStoredBackendUrl, getStoredToken } from "../../lib/api";
 import AuthImage from "../../components/ui/AuthImage";
 import "./Dashboard.css";
 
 interface SystemStatus { mode: "home" | "away"; alarm_active: boolean; updated_at: string; }
-interface BackendEvent { id: number; event_type: "authorized" | "unknown" | "unverifiable"; snapshot_path: string | null; alarm_triggered: boolean; timestamp: string; matched_name: string | null; }
+interface BackendEvent { id: number; event_type: "authorized" | "unknown" | "unverifiable" | "possible_threat"; snapshot_path: string | null; alarm_triggered: boolean; timestamp: string; matched_name: string | null; }
 
 export default function Dashboard() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
@@ -62,6 +62,15 @@ export default function Dashboard() {
             setEvents((prev) => [newEvent, ...prev].slice(0, 5));
             setAllEvents((prev) => [newEvent, ...prev]);
           }
+          if (msg.type === "threat_cleared") {
+            // A possible_threat was cleared — update it to authorized in local state
+            const clearedId = msg.id;
+            if (clearedId) {
+              const update = (prev: BackendEvent[]) => prev.map((ev) => ev.id === clearedId ? { ...ev, event_type: "authorized" as const } : ev);
+              setEvents(update);
+              setAllEvents(update);
+            }
+          }
           if (msg.type === "mode_change") setStatus((s) => s ? { ...s, mode: msg.mode as "home" | "away" } : s);
           if (msg.type === "alarm_change") setStatus((s) => s ? { ...s, alarm_active: msg.alarm_active ?? false } : s);
         } catch { /* ignore */ }
@@ -110,11 +119,13 @@ export default function Dashboard() {
     authorized: "text-green-400",
     unknown: "text-red-400",
     unverifiable: "text-yellow-400",
+    possible_threat: "text-orange-400",
   };
   const labelMap: Record<string, string> = {
     authorized: "Authorized",
     unknown: "Intruder Detected",
     unverifiable: "Unverifiable",
+    possible_threat: "Possible Threat - Not Cleared",
   };
 
   return (
@@ -189,7 +200,7 @@ export default function Dashboard() {
         {latestEvent ? (
           <div className="latest-card">
             <AuthImage
-              src={buildApiUrl(latestEvent.snapshot_path)}
+              src={latestEvent.snapshot_path ?? undefined}
               alt="snapshot"
               className="latest-snapshot"
               fallback={<div className="latest-snapshot-placeholder"><Camera size={24} className="text-gray-500" /></div>}
@@ -228,17 +239,19 @@ export default function Dashboard() {
           <div className="flex flex-col gap-3 mt-3">
             {events.map((event) => {
               const isIntruder = event.event_type === "unknown";
+              const isPossibleThreat = event.event_type === "possible_threat";
+              const rowClass = isIntruder
+                ? "bg-red-950 border-red-700 ring-1 ring-red-600/40"
+                : isPossibleThreat
+                  ? "bg-orange-950 border-orange-700 ring-1 ring-orange-600/40"
+                  : "bg-gray-900 border-gray-800";
               return (
                 <div
                   key={event.id}
-                  className={`flex items-center gap-4 rounded-xl p-3 border ${
-                    isIntruder
-                      ? "bg-red-950 border-red-700 ring-1 ring-red-600/40"
-                      : "bg-gray-900 border-gray-800"
-                  }`}
+                  className={`flex items-center gap-4 rounded-xl p-3 border ${rowClass}`}
                 >
                   <AuthImage
-                    src={buildApiUrl(event.snapshot_path)}
+                    src={event.snapshot_path ?? undefined}
                     alt="snapshot"
                     className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                     fallback={<div className="w-14 h-14 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0"><Camera size={20} className="text-gray-600" /></div>}
@@ -252,7 +265,10 @@ export default function Dashboard() {
                   {isIntruder && (
                     <span className="text-xs bg-red-700 text-white px-2 py-1 rounded-full flex-shrink-0 font-bold animate-pulse">INTRUDER</span>
                   )}
-                  {!isIntruder && event.alarm_triggered && (
+                  {isPossibleThreat && (
+                    <span className="text-xs bg-orange-700 text-white px-2 py-1 rounded-full flex-shrink-0 font-semibold animate-pulse">MONITORING</span>
+                  )}
+                  {!isIntruder && !isPossibleThreat && event.alarm_triggered && (
                     <span className="text-xs bg-red-900 text-red-300 px-2 py-1 rounded-full flex-shrink-0">Alarm</span>
                   )}
                 </div>

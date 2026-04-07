@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { apiClient, buildApiUrl, getApiErrorMessage, logApiError } from "../../lib/api";
+import { apiClient, getApiErrorMessage, logApiError } from "../../lib/api";
 import AlertCard from "../../components/ui/AlertCard/AlertCard";
 import AuthImage from "../../components/ui/AuthImage";
 import type { BadgeStatus } from "../../components/ui/StatusBadge/StatusBadge";
@@ -8,7 +8,7 @@ import "./Logs.css";
 
 interface BackendEvent {
   id: number;
-  event_type: "authorized" | "unknown" | "unverifiable";
+  event_type: "authorized" | "unknown" | "unverifiable" | "possible_threat";
   snapshot_path: string | null;
   alarm_triggered: boolean;
   timestamp: string;
@@ -40,6 +40,7 @@ const statusMap: Record<BackendEvent["event_type"], BadgeStatus> = {
   authorized: "authorized",
   unknown: "unknown",
   unverifiable: "unverifiable",
+  possible_threat: "unknown",
 };
 
 export default function Logs() {
@@ -157,7 +158,7 @@ export default function Logs() {
                     status={statusMap[event.event_type]}
                     matchedName={event.matched_name}
                     timestamp={event.timestamp}
-                    snapshotUrl={buildApiUrl(event.snapshot_path)}
+                    snapshotUrl={event.snapshot_path ?? undefined}
                     alarmTriggered={event.alarm_triggered}
                   />
                 </div>
@@ -190,7 +191,7 @@ export default function Logs() {
                         </div>
                         {detail.snapshot_path && (
                           <AuthImage
-                            src={buildApiUrl(detail.snapshot_path)}
+                            src={detail.snapshot_path ?? undefined}
                             alt="Event snapshot"
                             className="event-detail-snapshot"
                           />

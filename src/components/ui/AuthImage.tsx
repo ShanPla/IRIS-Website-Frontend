@@ -1,20 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { apiClient } from "../../lib/api";
 
 interface AuthImageProps {
+  /** API path like "/api/snapshots/xxx.jpg" — fetched via apiClient with auth */
   src: string | undefined;
   alt: string;
   className?: string;
   fallback?: React.ReactNode;
 }
 
-/**
- * Image component that fetches via fetch() with ngrok-skip-browser-warning header,
- * so images load correctly through ngrok tunnels.
- */
 export default function AuthImage({ src, alt, className, fallback }: AuthImageProps) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
-  const prevUrl = useRef<string | null>(null);
 
   useEffect(() => {
     if (!src) {
@@ -24,14 +21,11 @@ export default function AuthImage({ src, alt, className, fallback }: AuthImagePr
 
     let cancelled = false;
 
-    (async () => {
-      try {
-        const res = await fetch(src, {
-          headers: { "ngrok-skip-browser-warning": "true" },
-        });
-        if (!res.ok || cancelled) return;
-        const blob = await res.blob();
+    apiClient
+      .get<Blob>(src, { responseType: "blob" })
+      .then((res) => {
         if (cancelled) return;
+        const blob = res.data;
         if (!blob.type.startsWith("image/")) {
           setFailed(true);
           return;
@@ -42,10 +36,10 @@ export default function AuthImage({ src, alt, className, fallback }: AuthImagePr
           return url;
         });
         setFailed(false);
-      } catch {
+      })
+      .catch(() => {
         if (!cancelled) setFailed(true);
-      }
-    })();
+      });
 
     return () => {
       cancelled = true;
@@ -54,13 +48,12 @@ export default function AuthImage({ src, alt, className, fallback }: AuthImagePr
 
   useEffect(() => {
     return () => {
-      if (prevUrl.current) URL.revokeObjectURL(prevUrl.current);
+      setBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
     };
   }, []);
-
-  useEffect(() => {
-    prevUrl.current = blobUrl;
-  }, [blobUrl]);
 
   if (failed || !blobUrl) {
     return fallback ? <>{fallback}</> : null;
