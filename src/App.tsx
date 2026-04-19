@@ -1,30 +1,64 @@
+import { useState, type ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PiConfiguredRoute from "./components/auth/PiConfiguredRoute";
 import Sidebar from "./components/layout/Sidebar/Sidebar";
 import Topbar from "./components/layout/Topbar/Topbar";
+import "./App.css";
 import Login from "./pages/Login/Login";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import Logs from "./pages/Logs/Logs";
 import Profiles from "./pages/Profiles/Profiles";
-import Settings from "./pages/Settings/Settings";
 import AdminAccounts from "./pages/AdminAccounts/AdminAccounts";
-import UserManagement from "./pages/UserManagement/UserManagement";
-import SystemHealth from "./pages/SystemHealth/SystemHealth";
+import Devices from "./pages/Devices/Devices";
 import Setup from "./pages/Setup/Setup";
-import LiveFeed from "./pages/LiveFeed/LiveFeed";
 import { hasPiBackendConfigured } from "./lib/api";
 
-function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminLayout({ children }: { children: ReactNode }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   return (
-    <div className="flex h-screen bg-gray-950 text-white">
-      <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+    <div className="admin-shell">
+      <div
+        className={`admin-shell__overlay ${mobileNavOpen ? "admin-shell__overlay--visible" : ""}`}
+        onClick={() => setMobileNavOpen(false)}
+      />
+      <div className="admin-shell__frame">
+        <Sidebar mobileOpen={mobileNavOpen} onCloseMobile={() => setMobileNavOpen(false)} />
+        <div className="admin-shell__main">
+          <Topbar onToggleSidebar={() => setMobileNavOpen((current) => !current)} />
+          <main className="admin-shell__content">{children}</main>
+        </div>
       </div>
     </div>
+  );
+}
+
+function ProtectedAdminPage({ children }: { children: ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <AdminLayout>{children}</AdminLayout>
+    </ProtectedRoute>
+  );
+}
+
+function ConfiguredAdminPage({ children }: { children: ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <PiConfiguredRoute>
+        <AdminLayout>{children}</AdminLayout>
+      </PiConfiguredRoute>
+    </ProtectedRoute>
+  );
+}
+
+function ConfiguredRedirect({ to }: { to: string }) {
+  return (
+    <ProtectedRoute>
+      <PiConfiguredRoute>
+        <Navigate to={to} replace />
+      </PiConfiguredRoute>
+    </ProtectedRoute>
   );
 }
 
@@ -33,8 +67,8 @@ function PostLoginLanding() {
 
   if (bootstrapping) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Loading session...</p>
+      <div className="app-boot">
+        <p className="app-boot__label">Loading session...</p>
       </div>
     );
   }
@@ -53,67 +87,16 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PostLoginLanding />} />
-          <Route path="/setup" element={
-            <ProtectedRoute>
-              <AdminLayout><Setup /></AdminLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <PiConfiguredRoute>
-                <AdminLayout><Dashboard /></AdminLayout>
-              </PiConfiguredRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/logs" element={
-            <ProtectedRoute>
-              <PiConfiguredRoute>
-                <AdminLayout><Logs /></AdminLayout>
-              </PiConfiguredRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/profiles" element={
-            <ProtectedRoute>
-              <PiConfiguredRoute>
-                <AdminLayout><Profiles /></AdminLayout>
-              </PiConfiguredRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <PiConfiguredRoute>
-                <AdminLayout><Settings /></AdminLayout>
-              </PiConfiguredRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin-accounts" element={
-            <ProtectedRoute>
-              <PiConfiguredRoute>
-                <AdminLayout><AdminAccounts /></AdminLayout>
-              </PiConfiguredRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/users" element={
-            <ProtectedRoute>
-              <PiConfiguredRoute>
-                <AdminLayout><UserManagement /></AdminLayout>
-              </PiConfiguredRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/system-health" element={
-            <ProtectedRoute>
-              <PiConfiguredRoute>
-                <AdminLayout><SystemHealth /></AdminLayout>
-              </PiConfiguredRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/live-feed" element={
-            <ProtectedRoute>
-              <PiConfiguredRoute>
-                <AdminLayout><LiveFeed /></AdminLayout>
-              </PiConfiguredRoute>
-            </ProtectedRoute>
-          } />
+          <Route path="/setup" element={<ProtectedAdminPage><Setup /></ProtectedAdminPage>} />
+          <Route path="/dashboard" element={<ConfiguredAdminPage><Dashboard /></ConfiguredAdminPage>} />
+          <Route path="/profiles" element={<ConfiguredAdminPage><Profiles /></ConfiguredAdminPage>} />
+          <Route path="/devices" element={<ConfiguredAdminPage><Devices /></ConfiguredAdminPage>} />
+          <Route path="/admin-accounts" element={<ConfiguredAdminPage><AdminAccounts /></ConfiguredAdminPage>} />
+          <Route path="/users" element={<ConfiguredRedirect to="/devices" />} />
+          <Route path="/system-health" element={<ConfiguredRedirect to="/devices" />} />
+          <Route path="/logs" element={<ConfiguredRedirect to="/dashboard" />} />
+          <Route path="/settings" element={<ConfiguredRedirect to="/dashboard" />} />
+          <Route path="/live-feed" element={<ConfiguredRedirect to="/dashboard" />} />
           <Route path="*" element={<PostLoginLanding />} />
         </Routes>
       </BrowserRouter>

@@ -28,12 +28,14 @@ export default function Setup() {
 
   async function loadSummary() {
     setRefreshing(true);
+
     try {
       const [adminsRes, usersRes, healthRes] = await Promise.all([
         apiClient.get<BackendAdminAccount[]>("/api/auth/admin/accounts"),
         apiClient.get<BackendAppUser[]>("/api/auth/admin/app-users"),
         apiClient.get<{ status?: string }>("/health"),
       ]);
+
       setAdminCount(adminsRes.data.length);
       setTotalUsers(usersRes.data.length);
       setBackendOnline(healthRes.data.status === "ok");
@@ -48,76 +50,88 @@ export default function Setup() {
 
   const handleSave = async () => {
     if (!backendInput.trim()) {
-      setError("Please enter your Raspberry Pi IP.");
+      setError("Please enter the Raspberry Pi IP.");
       return;
     }
+
     setSaving(true);
     setError("");
+
     const normalizedPi = normalizePiAddress(backendInput);
     if (!normalizedPi) {
       setError("Invalid Raspberry Pi IP address.");
       setSaving(false);
       return;
     }
+
     setStoredPiAddress(normalizedPi);
     setSaving(false);
     navigate("/dashboard", { replace: true });
   };
 
   return (
-    <div className="setup-page">
-      <div className="setup-card">
-        <div className="setup-header">
-          <div className="setup-icon"><Server size={22} /></div>
-          <button className="setup-refresh" onClick={() => void loadSummary()} disabled={refreshing}>
-            <RefreshCw size={14} className={refreshing ? "spin" : ""} />
-            {refreshing ? "Checking..." : "Refresh"}
+    <div className="app-page setup-page">
+      <div className="app-page__header">
+        <div>
+          <p className="app-page__eyebrow">Activation</p>
+          <h1 className="app-page__title">Connect Raspberry Pi</h1>
+          <p className="app-page__subtitle">
+            Full monitoring stays locked until this admin session knows which Raspberry Pi node to
+            talk to.
+          </p>
+        </div>
+        <div className="app-page__actions">
+          <button className="app-button app-button--secondary" onClick={() => void loadSummary()} disabled={refreshing}>
+            <RefreshCw size={15} className={refreshing ? "setup-spin" : ""} />
+            {refreshing ? "Checking..." : "Refresh Status"}
           </button>
         </div>
-        <h1 className="setup-title">Limited Admin Mode</h1>
-        <p className="setup-desc">
-          Sign-in is active, but full modules stay locked until you set the Raspberry Pi IP.
-        </p>
-        <div className="setup-summary-grid">
-          <SummaryCard
-            icon={<ShieldCheck size={14} />}
-            label="Admin Users"
-            value={adminCount === null ? "N/A" : String(adminCount)}
-          />
-          <SummaryCard
-            icon={<Users size={14} />}
-            label="Total App Users"
-            value={totalUsers === null ? "N/A" : String(totalUsers)}
-          />
-          <SummaryCard
-            icon={<Activity size={14} />}
-            label="Backend Status"
-            value={backendOnline ? "Online" : "Offline"}
-          />
-          <SummaryCard
-            icon={<Activity size={14} />}
-            label="Frontend Status"
-            value="Online"
-          />
-        </div>
-        <div className="setup-field">
-          <label>Raspberry Pi IP Address</label>
-          <input
-            type="text"
-            value={backendInput}
-            onChange={(e) => setBackendInput(e.target.value)}
-            placeholder="e.g. 192.168.1.120"
-            onKeyDown={(e) => e.key === "Enter" && void handleSave()}
-          />
-        </div>
-        {error && <p className="setup-error">{error}</p>}
-        <button className="setup-btn" onClick={() => void handleSave()} disabled={saving}>
-          <Wifi size={16} />
-          {saving ? "Connecting..." : "Connect & Continue"}
-        </button>
-        <p className="setup-hint">
-          Example Pi IP: <code>192.168.1.120:8000</code>
-        </p>
+      </div>
+
+      <div className="setup-grid">
+        <section className="app-card setup-card app-fade-up">
+          <div className="setup-card__icon">
+            <Server size={22} />
+          </div>
+          <h2>Limited Admin Mode</h2>
+          <p>
+            Sign-in is already active. Once you connect the node, the overview, devices, profiles,
+            and admin tools unlock automatically.
+          </p>
+
+          <div className="setup-summary-grid">
+            <SummaryCard icon={<ShieldCheck size={16} />} label="Admin Users" value={adminCount === null ? "N/A" : String(adminCount)} />
+            <SummaryCard icon={<Users size={16} />} label="App Users" value={totalUsers === null ? "N/A" : String(totalUsers)} />
+            <SummaryCard icon={<Activity size={16} />} label="Backend" value={backendOnline ? "Online" : "Offline"} />
+            <SummaryCard icon={<Wifi size={16} />} label="Pi Address" value={getStoredPiAddress() ?? "Not set"} />
+          </div>
+        </section>
+
+        <section className="app-card setup-card app-fade-up">
+          <h2>Node Address</h2>
+          <p>Enter the Raspberry Pi address with an optional port. Example: <code>192.168.1.120:8000</code></p>
+
+          <div className="app-field">
+            <label>Raspberry Pi IP address</label>
+            <input
+              type="text"
+              value={backendInput}
+              onChange={(event) => setBackendInput(event.target.value)}
+              placeholder="e.g. 192.168.1.120:8000"
+              onKeyDown={(event) => event.key === "Enter" && void handleSave()}
+              className="app-input"
+            />
+          </div>
+
+          {error && <p className="app-error">{error}</p>}
+
+          <div className="setup-actions">
+            <button className="app-button app-button--primary" onClick={() => void handleSave()} disabled={saving}>
+              <Wifi size={16} />
+              {saving ? "Connecting..." : "Connect & Continue"}
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -126,10 +140,10 @@ export default function Setup() {
 function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="setup-summary-card">
-      <div className="setup-summary-icon">{icon}</div>
+      <div className="setup-summary-card__icon">{icon}</div>
       <div>
-        <p className="setup-summary-label">{label}</p>
-        <p className="setup-summary-value">{value}</p>
+        <p>{label}</p>
+        <strong>{value}</strong>
       </div>
     </div>
   );

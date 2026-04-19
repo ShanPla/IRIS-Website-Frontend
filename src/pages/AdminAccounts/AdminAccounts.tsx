@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Shield, Trash2, UserPlus, Users, Key } from "lucide-react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { Key, Shield, Trash2, UserPlus, Users } from "lucide-react";
 import { apiClient } from "../../lib/api";
 import "./AdminAccounts.css";
 
@@ -54,17 +54,19 @@ export default function AdminAccounts() {
   async function loadAll() {
     setLoading(true);
     setFormError("");
+
     try {
       const [accountsRes, homeownersRes, appUsersRes] = await Promise.all([
         apiClient.get<BackendAdminAccount[]>("/api/auth/admin/accounts"),
         apiClient.get<Homeowner[]>("/api/auth/admin/homeowners").catch(() => ({ data: [] as Homeowner[] })),
         apiClient.get<AppUser[]>("/api/auth/admin/app-users").catch(() => ({ data: [] as AppUser[] })),
       ]);
+
       setAccounts(accountsRes.data.map(mapAdminAccount));
       setHomeowners(homeownersRes.data);
       setAppUsers(appUsersRes.data);
     } catch {
-      setFormError("Failed to load accounts.");
+      setFormError("Failed to load admin data.");
     } finally {
       setLoading(false);
     }
@@ -75,18 +77,22 @@ export default function AdminAccounts() {
       setFormError("Username and password are required.");
       return;
     }
+
     if (hasReachedLimit) {
       setFormError("Only 2 admin accounts are allowed.");
       return;
     }
+
     setSubmitting(true);
     setFormError("");
+
     try {
       const response = await apiClient.post<BackendAdminAccount>("/api/auth/admin/accounts", {
         username: newAccount.username.trim(),
         password: newAccount.password,
       });
-      setAccounts((prev) => [...prev, mapAdminAccount(response.data)]);
+
+      setAccounts((current) => [...current, mapAdminAccount(response.data)]);
       setNewAccount({ username: "", password: "" });
       setShowModal(false);
     } catch {
@@ -99,7 +105,7 @@ export default function AdminAccounts() {
   const handleDelete = async (id: string) => {
     try {
       await apiClient.delete(`/api/auth/admin/accounts/${id}`);
-      setAccounts((prev) => prev.filter((a) => a.id !== id));
+      setAccounts((current) => current.filter((account) => account.id !== id));
       setDeleteConfirm(null);
     } catch {
       setFormError("Failed to delete admin account.");
@@ -109,7 +115,7 @@ export default function AdminAccounts() {
   const handleDeleteHomeowner = async (id: number) => {
     try {
       await apiClient.delete(`/api/auth/admin/homeowners/${id}`);
-      setHomeowners((prev) => prev.filter((h) => h.id !== id));
+      setHomeowners((current) => current.filter((homeowner) => homeowner.id !== id));
       setDeleteHomeownerConfirm(null);
     } catch {
       setFormError("Failed to delete homeowner.");
@@ -121,6 +127,7 @@ export default function AdminAccounts() {
       setFormError("Password must be at least 6 characters.");
       return;
     }
+
     try {
       await apiClient.put(`/api/auth/admin/homeowners/${id}/password`, { password: newPassword });
       setResetPasswordId(null);
@@ -130,123 +137,92 @@ export default function AdminAccounts() {
     }
   };
 
+  const deviceAccessUsers = appUsers.filter((user) => user.has_device_access).length;
+
   return (
-    <div className="admin-accounts">
-      {/* Admin Accounts Section */}
-      <div className="admin-accounts-header">
-        <h1 className="admin-accounts-title">Admin Accounts</h1>
-        <button className="admin-add-btn" onClick={() => setShowModal(true)} disabled={hasReachedLimit}>
-          <UserPlus size={15} />
-          Add Account
-        </button>
-      </div>
-      <p className="admin-accounts-desc">
-        Manage dashboard administrator accounts. Maximum: 2 admin accounts.
-      </p>
-      {formError && <p className="modal-error">{formError}</p>}
-
-      <div className="admin-table-wrapper">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Role</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={4}>Loading...</td></tr>
-            ) : accounts.length === 0 ? (
-              <tr><td colSpan={4}>No admin accounts found.</td></tr>
-            ) : (
-              accounts.map((account) => (
-                <tr key={account.id}>
-                  <td className="admin-username">@{account.username}</td>
-                  <td>
-                    <span className="role-badge role-badge--admin">
-                      <Shield size={12} />
-                      {account.role}
-                    </span>
-                  </td>
-                  <td>{new Date(account.createdAt).toLocaleString()}</td>
-                  <td>
-                    {deleteConfirm === account.id ? (
-                      <div className="admin-confirm">
-                        <span>Remove?</span>
-                        <button className="confirm-yes" onClick={() => void handleDelete(account.id)}>Yes</button>
-                        <button className="confirm-no" onClick={() => setDeleteConfirm(null)}>No</button>
-                      </div>
-                    ) : (
-                      <button className="admin-delete-btn" onClick={() => setDeleteConfirm(account.id)}>
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+    <div className="app-page admin-page">
+      <div className="app-page__header">
+        <div>
+          <p className="app-page__eyebrow">Admin Governance</p>
+          <h1 className="app-page__title">Admin Accounts</h1>
+          <p className="app-page__subtitle">
+            Manage administrator credentials, keep homeowner access healthy, and stay aligned with
+            the leaner device-focused navigation.
+          </p>
+        </div>
+        <div className="app-page__actions">
+          <button className="app-button app-button--primary" onClick={() => setShowModal(true)} disabled={hasReachedLimit}>
+            <UserPlus size={15} />
+            Add Admin
+          </button>
+        </div>
       </div>
 
-      {/* Homeowners Section */}
-      <div className="admin-section">
-        <h2 className="admin-section-title">
-          <Users size={18} />
-          Homeowners
-        </h2>
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
+      {formError && <p className="app-error">{formError}</p>}
+
+      <div className="admin-kpis">
+        <AdminKpi icon={<Shield size={20} />} label="Admin Accounts" value={loading ? "..." : String(accounts.length)} meta="Maximum of two dashboard admins" tone="primary" />
+        <AdminKpi icon={<Users size={20} />} label="Homeowners" value={loading ? "..." : String(homeowners.length)} meta="Primary and invited homeowner accounts" tone="success" />
+        <AdminKpi icon={<Users size={20} />} label="Total App Users" value={loading ? "..." : String(appUsers.length)} meta="Accounts stored in the backend" tone="warning" />
+        <AdminKpi icon={<Key size={20} />} label="Device Access" value={loading ? "..." : String(deviceAccessUsers)} meta="Users currently linked to a device" tone="danger" />
+      </div>
+
+      <section className="app-card admin-panel app-fade-up">
+        <div className="app-panel-header">
+          <div>
+            <h2 className="app-section-title">Administrator Accounts</h2>
+            <p className="app-panel-subtitle">Direct access to the web dashboard. Limited to two operators.</p>
+          </div>
+        </div>
+
+        <div className="app-table-card">
+          <table className="app-table">
             <thead>
               <tr>
                 <th>Username</th>
                 <th>Role</th>
+                <th>Created</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {homeowners.length === 0 ? (
-                <tr><td colSpan={3}>No homeowners found.</td></tr>
+              {loading ? (
+                <tr>
+                  <td colSpan={4}>Loading admin accounts...</td>
+                </tr>
+              ) : accounts.length === 0 ? (
+                <tr>
+                  <td colSpan={4}>No admin accounts found.</td>
+                </tr>
               ) : (
-                homeowners.map((hw) => (
-                  <tr key={hw.id}>
-                    <td className="admin-username">@{hw.username}</td>
+                accounts.map((account) => (
+                  <tr key={account.id}>
                     <td>
-                      <span className="role-badge role-badge--homeowner">{hw.role.replace(/_/g, " ")}</span>
+                      <div className="admin-identity">
+                        <strong>@{account.username}</strong>
+                        <span>ID {account.id}</span>
+                      </div>
                     </td>
                     <td>
-                      <div className="admin-actions-row">
-                        {resetPasswordId === hw.id ? (
-                          <div className="reset-password-inline">
-                            <input
-                              type="password"
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              placeholder="New password"
-                              className="modal-input reset-input"
-                            />
-                            <button className="confirm-yes" onClick={() => void handleResetPassword(hw.id)}>Save</button>
-                            <button className="confirm-no" onClick={() => { setResetPasswordId(null); setNewPassword(""); }}>Cancel</button>
-                          </div>
-                        ) : (
-                          <button className="admin-action-btn" onClick={() => setResetPasswordId(hw.id)}>
-                            <Key size={14} /> Reset Password
+                      <span className="app-status app-status--primary">{formatRole(account.role)}</span>
+                    </td>
+                    <td>{new Date(account.createdAt).toLocaleString()}</td>
+                    <td>
+                      {deleteConfirm === account.id ? (
+                        <div className="admin-inline-actions">
+                          <button className="app-button app-button--danger" onClick={() => void handleDelete(account.id)}>
+                            Confirm
                           </button>
-                        )}
-                        {deleteHomeownerConfirm === hw.id ? (
-                          <div className="admin-confirm">
-                            <span>Remove?</span>
-                            <button className="confirm-yes" onClick={() => void handleDeleteHomeowner(hw.id)}>Yes</button>
-                            <button className="confirm-no" onClick={() => setDeleteHomeownerConfirm(null)}>No</button>
-                          </div>
-                        ) : (
-                          <button className="admin-delete-btn" onClick={() => setDeleteHomeownerConfirm(hw.id)}>
-                            <Trash2 size={14} />
+                          <button className="app-button app-button--secondary" onClick={() => setDeleteConfirm(null)}>
+                            Cancel
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <button className="admin-action" onClick={() => setDeleteConfirm(account.id)}>
+                          <Trash2 size={15} />
+                          Remove
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -254,43 +230,87 @@ export default function AdminAccounts() {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* App Users Overview */}
-      <div className="admin-section">
-        <h2 className="admin-section-title">
-          <Users size={18} />
-          App Users Overview
-        </h2>
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
+      <section className="app-card admin-panel app-fade-up">
+        <div className="app-panel-header">
+          <div>
+            <h2 className="app-section-title">Homeowner Directory</h2>
+            <p className="app-panel-subtitle">Reset homeowner credentials or remove stale accounts when needed.</p>
+          </div>
+        </div>
+
+        <div className="app-table-card">
+          <table className="app-table">
             <thead>
               <tr>
-                <th>Username</th>
+                <th>User</th>
                 <th>Role</th>
-                <th>Faces</th>
-                <th>Access</th>
-                <th>Device</th>
+                <th>Password</th>
+                <th>Delete</th>
               </tr>
             </thead>
             <tbody>
-              {appUsers.length === 0 ? (
-                <tr><td colSpan={5}>No users found.</td></tr>
+              {loading ? (
+                <tr>
+                  <td colSpan={4}>Loading homeowners...</td>
+                </tr>
+              ) : homeowners.length === 0 ? (
+                <tr>
+                  <td colSpan={4}>No homeowners found.</td>
+                </tr>
               ) : (
-                appUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td className="admin-username">@{user.username}</td>
+                homeowners.map((homeowner) => (
+                  <tr key={homeowner.id}>
                     <td>
-                      <span className={`role-badge role-badge--${user.role.includes("admin") ? "admin" : "homeowner"}`}>
-                        {user.role.replace(/_/g, " ")}
-                      </span>
+                      <div className="admin-identity">
+                        <strong>@{homeowner.username}</strong>
+                        <span>ID {homeowner.id}</span>
+                      </div>
                     </td>
-                    <td>{user.face_profile_count}</td>
-                    <td>{user.access_type}</td>
                     <td>
-                      <span className={user.has_device_access ? "text-green" : "text-gray"}>
-                        {user.has_device_access ? "Yes" : "No"}
-                      </span>
+                      <span className="app-status app-status--neutral">{formatRole(homeowner.role)}</span>
+                    </td>
+                    <td>
+                      {resetPasswordId === homeowner.id ? (
+                        <div className="admin-password-row">
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(event) => setNewPassword(event.target.value)}
+                            placeholder="New password"
+                            className="app-input"
+                          />
+                          <button className="app-button app-button--primary" onClick={() => void handleResetPassword(homeowner.id)}>
+                            Save
+                          </button>
+                          <button className="app-button app-button--secondary" onClick={() => { setResetPasswordId(null); setNewPassword(""); }}>
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button className="admin-action" onClick={() => setResetPasswordId(homeowner.id)}>
+                          <Key size={15} />
+                          Reset Password
+                        </button>
+                      )}
+                    </td>
+                    <td>
+                      {deleteHomeownerConfirm === homeowner.id ? (
+                        <div className="admin-inline-actions">
+                          <button className="app-button app-button--danger" onClick={() => void handleDeleteHomeowner(homeowner.id)}>
+                            Confirm
+                          </button>
+                          <button className="app-button app-button--secondary" onClick={() => setDeleteHomeownerConfirm(null)}>
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button className="admin-action admin-action--danger" onClick={() => setDeleteHomeownerConfirm(homeowner.id)}>
+                          <Trash2 size={15} />
+                          Remove
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -298,32 +318,96 @@ export default function AdminAccounts() {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* Add Admin Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => { setShowModal(false); setFormError(""); }}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2 className="modal-title">Add Admin Account</h2>
-            <p className="modal-desc">New accounts can log into the IRIS admin dashboard immediately.</p>
-            <div className="modal-field">
-              <label>Username</label>
-              <input type="text" value={newAccount.username} onChange={(e) => setNewAccount({ ...newAccount, username: e.target.value })} placeholder="e.g. maria" className="modal-input" />
+        <div className="app-modal-overlay" onClick={() => { setShowModal(false); setFormError(""); }}>
+          <div className="app-card app-modal" onClick={(event) => event.stopPropagation()}>
+            <h2 className="app-modal__title">Add Admin Account</h2>
+            <p className="app-modal__desc">This account can sign in to the dashboard immediately after creation.</p>
+
+            <div className="app-form-grid">
+              <div className="app-field">
+                <label>Username</label>
+                <input
+                  type="text"
+                  value={newAccount.username}
+                  onChange={(event) => setNewAccount((current) => ({ ...current, username: event.target.value }))}
+                  placeholder="e.g. iris-admin"
+                  className="app-input"
+                />
+              </div>
+              <div className="app-field">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={newAccount.password}
+                  onChange={(event) => setNewAccount((current) => ({ ...current, password: event.target.value }))}
+                  placeholder="Enter a secure password"
+                  className="app-input"
+                />
+              </div>
             </div>
-            <div className="modal-field">
-              <label>Password</label>
-              <input type="password" value={newAccount.password} onChange={(e) => setNewAccount({ ...newAccount, password: e.target.value })} placeholder="Enter password" className="modal-input" />
-            </div>
-            {formError && <p className="modal-error">{formError}</p>}
-            {hasReachedLimit && <p className="modal-error">Admin limit reached (2 accounts).</p>}
-            <div className="modal-actions">
-              <button className="modal-cancel" onClick={() => { setShowModal(false); setFormError(""); }}>Cancel</button>
-              <button className="modal-confirm" onClick={() => void handleAdd()} disabled={submitting || hasReachedLimit}>{submitting ? "Adding..." : "Add Account"}</button>
+
+            {hasReachedLimit && <p className="app-error">Admin limit reached. Remove an existing admin to continue.</p>}
+
+            <div className="app-modal__actions">
+              <button className="app-button app-button--secondary" onClick={() => { setShowModal(false); setFormError(""); }}>
+                Cancel
+              </button>
+              <button className="app-button app-button--primary" onClick={() => void handleAdd()} disabled={submitting || hasReachedLimit}>
+                {submitting ? "Creating..." : "Create Admin"}
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function AdminKpi({
+  icon,
+  label,
+  value,
+  meta,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  meta: string;
+  tone: "primary" | "success" | "warning" | "danger";
+}) {
+  const palette =
+    tone === "success"
+      ? { accent: "#16A34A", soft: "#DCFCE7" }
+      : tone === "warning"
+        ? { accent: "#EA580C", soft: "#FFEDD5" }
+        : tone === "danger"
+          ? { accent: "#DC2626", soft: "#FEE2E2" }
+          : { accent: "#2563EB", soft: "#DBEAFE" };
+
+  return (
+    <article
+      className="app-card app-kpi-card app-fade-up"
+      style={
+        {
+          "--kpi-accent": `${palette.accent}20`,
+          "--kpi-accent-soft": palette.soft,
+          "--kpi-accent-text": palette.accent,
+        } as CSSProperties
+      }
+    >
+      <div className="app-kpi-card__header">
+        <div>
+          <p className="app-kpi-card__label">{label}</p>
+          <p className="app-kpi-card__value">{value}</p>
+          <p className="app-kpi-card__meta">{meta}</p>
+        </div>
+        <span className="app-kpi-card__icon">{icon}</span>
+      </div>
+    </article>
   );
 }
 
@@ -334,4 +418,8 @@ function mapAdminAccount(account: BackendAdminAccount): AdminAccount {
     role: account.role,
     createdAt: account.created_at,
   };
+}
+
+function formatRole(role: string) {
+  return role.replace(/_/g, " ");
 }
