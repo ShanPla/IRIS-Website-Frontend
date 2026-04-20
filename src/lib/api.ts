@@ -23,9 +23,9 @@ export function normalizeBackendUrl(raw: string): string {
 }
 
 function resolveBackendUrl(): string | undefined {
-  const stored = normalizeBackendUrl(localStorage.getItem(BACKEND_URL_KEY) || "");
   const envUrl = normalizeBackendUrl(ENV_API_URL);
-  return stored || envUrl || undefined;
+  const stored = normalizeBackendUrl(localStorage.getItem(BACKEND_URL_KEY) || "");
+  return envUrl || stored || undefined;
 }
 
 /**
