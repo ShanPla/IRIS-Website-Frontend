@@ -37,7 +37,7 @@ export default function Dashboard() {
       
       setFleet(fleetData);
       setAccounts(accountsData);
-    } catch (err) {
+    } catch {
       setError("Failed to synchronize with central cloud registry.");
     } finally {
       setLoading(false);
@@ -88,7 +88,14 @@ export default function Dashboard() {
             <h1 className="dashboard-title">Fleet Supervision</h1>
             <div className="dashboard-pulse">
               <span className="pulse-dot"></span>
-              <span>Backend Connectivity: <strong className={stats.backendStatus === "Online" ? "text-primary" : "text-error"}>{stats.backendStatus}</strong> • {stats.onlineDevices} Nodes Synchronized</span>
+              <span>
+                Backend Connectivity:{" "}
+                <strong className={stats.backendStatus === "Online" ? "text-primary" : "text-error"}>
+                  {stats.backendStatus}
+                </strong>
+                {" \u2022 "}
+                {stats.onlineDevices} Nodes Synchronized
+              </span>
             </div>
           </div>
 
@@ -232,7 +239,7 @@ function NodeCinematicCard({ node, index }: { node: PiNodeStatus; index: number 
         </div>
         <div className="metric-item">
             <span className="metric-label">Thermal</span>
-            <span className="metric-value">{node.cpu_temp ? `${node.cpu_temp}°C` : '--'}</span>
+            <span className="metric-value">{node.cpu_temp ? `${node.cpu_temp}\u00B0C` : '--'}</span>
         </div>
       </div>
 
@@ -256,7 +263,13 @@ function NodeCinematicCard({ node, index }: { node: PiNodeStatus; index: number 
   );
 }
 
-function FleetProgressUI({ label, value, color }: any) {
+interface FleetProgressUIProps {
+  label: string;
+  value: number;
+  color: string;
+}
+
+function FleetProgressUI({ label, value, color }: FleetProgressUIProps) {
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-end">
@@ -269,3 +282,4 @@ function FleetProgressUI({ label, value, color }: any) {
     </div>
   );
 }
+
