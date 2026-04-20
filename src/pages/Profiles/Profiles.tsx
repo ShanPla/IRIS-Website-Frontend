@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Fragment } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { 
   User, 
   Users, 
@@ -60,7 +60,7 @@ export default function Profiles() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
           <div>
             <p className="accounts-eyebrow">Governance / Core Mesh</p>
-            <h1 className="accounts-title">User Accounts Registry</h1>
+            <h1 className="accounts-title">Account Hierarchy</h1>
           </div>
 
           <div className="accounts-summary">

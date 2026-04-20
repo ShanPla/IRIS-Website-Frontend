@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { 
   ShieldAlert, 
-  ShieldCheck, 
   RefreshCw, 
   Activity, 
   Radio,
@@ -68,12 +67,14 @@ export default function Dashboard() {
     
     // Online check: last_active within 30 minutes (lenient for testing)
     const now = new Date();
-    const activeHomeowners = homeowners.filter(a => {
-        if (!a.last_active) return false;
-        const lastActive = new Date(a.last_active);
+    const isOnline = (lastActive: string | null) => {
+        if (!lastActive) return false;
+        const lastActive = new Date(lastActive);
         const diffMinutes = (now.getTime() - lastActive.getTime()) / (1000 * 60);
         return diffMinutes < 30; // 30 minute window
-    }).length;
+    };
+
+    const activeHomeowners = homeowners.filter(a => isOnline(a.last_active)).length;
 
     return {
         onlineDevices,
