@@ -3,9 +3,10 @@ import {
   AUTH_API_TIMEOUT_MS,
   apiClient,
   getStoredBackendUrl,
-  getApiErrorMessage,
-  getStoredToken,
-  logApiError,
+  getApiErrorMessage, 
+  getStoredToken,     
+  logApiError,        
+  probeBackend,       
   setStoredBackendUrl,
   setStoredPiAddress,
   setStoredToken,
@@ -32,16 +33,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const restoreSession = async () => {
-      const backendUrl = getStoredBackendUrl();
-      if (!backendUrl) {
-        setStoredToken(null);
-        setSession(null);
+      const token = getStoredToken();
+      if (!token) {
         setBootstrapping(false);
         return;
       }
 
-      const token = getStoredToken();
-      if (!token) {
+      const backendUrl = getStoredBackendUrl();
+      if (!backendUrl) {
+        setStoredToken(null);
+        setSession(null);
         setBootstrapping(false);
         return;
       }
@@ -62,13 +63,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string): Promise<LoginResult> => {
+    const normalizedUsername = username.trim();
+    if (!normalizedUsername) {
+      return { success: false, error: "Username is required." };
+    }
+
     const backendUrl = getStoredBackendUrl();
     if (!backendUrl) {
       return { success: false, error: "Backend API is not configured." };
     }
 
+    const probe = await probeBackend(backendUrl);
+    if (!probe.ok) {
+      return { success: false, error: probe.message };
+    }
+
+    setStoredBackendUrl(probe.normalizedUrl);
+
     const form = new URLSearchParams();
-    form.append("username", username);
+    form.append("username", normalizedUsername);
     form.append("password", password);
 
     try {
@@ -120,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

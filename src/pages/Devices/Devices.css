@@ -1,132 +1,78 @@
-.devices-card {
-  padding: 22px;
+.devices-container {
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
-.devices-grid {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 16px;
+.devices-header {
+  margin-bottom: 64px;
 }
 
-.devices-device {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.devices-title {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(64px, 10vw, 100px);
+  font-weight: 300;
+  font-style: italic;
+  color: white;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
 }
 
-.devices-device strong {
-  color: var(--app-text);
-  font-size: 14px;
-}
-
-.devices-device span {
-  color: var(--app-text-muted);
-  font-size: 12px;
-}
-
-.devices-checks {
-  display: grid;
-  gap: 12px;
-}
-
-.devices-check {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--app-surface-muted);
-}
-
-.devices-check__dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.devices-check__dot--good {
-  background: var(--app-success);
-  box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.12);
-}
-
-.devices-check__dot--bad {
-  background: var(--app-danger);
-  box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.12);
-}
-
-.devices-check p,
-.devices-check span {
-  margin: 0;
-}
-
-.devices-check p {
-  color: var(--app-text);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.devices-check span {
-  color: var(--app-text-muted);
-  font-size: 12px;
-}
-
-.devices-meta-grid {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.devices-meta {
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--app-surface-muted);
-}
-
-.devices-meta__label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--app-text-muted);
+.devices-eyebrow {
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.devices-meta strong {
-  display: block;
+  letter-spacing: 0.4em;
+  color: var(--app-primary);
   margin-top: 8px;
-  color: var(--app-text);
-  font-size: 14px;
 }
 
-.devices-spin {
-  animation: devicesSpin 0.9s linear infinite;
+.stats-strip {
+  display: flex;
+  gap: 48px;
+  padding: 24px 32px;
+  border-radius: 20px;
 }
 
-@keyframes devicesSpin {
-  from {
-    transform: rotate(0deg);
-  }
+.stats-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
 
-  to {
-    transform: rotate(360deg);
+.stats-value {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: 40px;
+  line-height: 1;
+}
+
+.device-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .device-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 1100px) {
-  .devices-grid {
-    grid-template-columns: 1fr;
+@media (min-width: 1280px) {
+  .device-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (max-width: 720px) {
-  .devices-card {
-    padding: 18px;
-  }
+.telemetry-progress.bg-primary {
+  background: linear-gradient(90deg, #5e94cf, #9ecaff);
+  box-shadow: 0 0 10px var(--app-primary);
+}
 
-  .devices-meta-grid {
-    grid-template-columns: 1fr;
-  }
+.telemetry-progress.bg-tertiary {
+  background: var(--app-tertiary);
+}
+
+.telemetry-progress.bg-error {
+  background: var(--app-error);
 }

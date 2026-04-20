@@ -1,392 +1,218 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
-  Activity,
-  BellOff,
-  Camera,
   Cpu,
-  HardDrive,
+  MemoryStick,
+  Thermometer,
+  Radio,
   RefreshCw,
-  Server,
-  ShieldAlert,
-  ShieldCheck,
-  ToggleLeft,
-  ToggleRight,
-  Users,
+  Search,
+  ChevronRight,
+  ExternalLink,
+  Activity,
+  Calendar,
 } from "lucide-react";
-import { apiClient, getStoredPiAddress } from "../../lib/api";
+import { apiClient, getApiErrorMessage } from "../../lib/api";
+import type { FleetStatus, PiNodeStatus } from "../../types/iris";
 import "./Devices.css";
 
-interface SystemStatusResponse {
-  mode: "home" | "away";
-  alarm_active: boolean;
-  updated_at: string;
-}
-
-interface EventsResponse {
-  items: Array<{ timestamp: string; event_type: string }>;
-}
-
-interface CameraHealth {
-  cv2_available: boolean;
-  engine_running: boolean;
-  camera_opened: boolean;
-  camera_ready: boolean;
-  latest_frame_ts?: number | null;
-  known_faces?: number;
-  detection_method?: string;
-  yolo_loaded?: boolean;
-}
-
-interface BackendAppUser {
-  id: number;
-  username: string;
-  role: string;
-  access_type: string;
-  has_device_access: boolean;
-  face_profile_count: number;
-  fcm_token: string | null;
-}
-
-interface BackendAdminAccount {
-  id: number;
-}
-
-interface BackendProfile {
-  id: number;
+function getRegistryErrorMessage(error: unknown): string {
+  const detail = getApiErrorMessage(error, "Failed to synchronize with the node registry.");
+  if (detail === "Could not validate credentials") {
+    return "Session is not authorized for the central registry. Sign in with your Render admin account.";
+  }
+  return detail;
 }
 
 export default function Devices() {
-  const [status, setStatus] = useState<SystemStatusResponse | null>(null);
-  const [events, setEvents] = useState<EventsResponse["items"]>([]);
-  const [cameraHealth, setCameraHealth] = useState<CameraHealth | null>(null);
-  const [appUsers, setAppUsers] = useState<BackendAppUser[]>([]);
-  const [adminCount, setAdminCount] = useState(0);
-  const [profileCount, setProfileCount] = useState(0);
-  const [backendOnline, setBackendOnline] = useState(false);
+  const [fleet, setFleet] = useState<FleetStatus | null>(null);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [togglingMode, setTogglingMode] = useState(false);
   const [error, setError] = useState("");
-  const piAddress = getStoredPiAddress();
 
-  useEffect(() => {
-    void load();
-
-    const refreshTimer = window.setInterval(() => {
-      void load({ silent: true });
-    }, 12000);
-
-    return () => window.clearInterval(refreshTimer);
-  }, []);
-
-  async function load(options?: { silent?: boolean }) {
-    if (options?.silent) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
-    setError("");
+  const load = async (options?: { silent?: boolean }) => {
+    if (options?.silent) setRefreshing(true);
+    else setLoading(true);
 
     try {
-      const [statusRes, eventsRes, appUsersRes, adminsRes, profilesRes, healthRes] = await Promise.all([
-        apiClient.get<SystemStatusResponse>("/api/system/status"),
-        apiClient.get<EventsResponse>("/api/events/", { params: { limit: 20 } }),
-        apiClient.get<BackendAppUser[]>("/api/auth/admin/app-users").catch(() => ({ data: [] as BackendAppUser[] })),
-        apiClient.get<BackendAdminAccount[]>("/api/auth/admin/accounts").catch(() => ({ data: [] as BackendAdminAccount[] })),
-        apiClient.get<BackendProfile[]>("/api/faces/").catch(() => ({ data: [] as BackendProfile[] })),
-        apiClient.get<{ status?: string }>("/health").catch(
-          () => ({ data: { status: undefined } as { status?: string } })
-        ),
-      ]);
-
-      setStatus(statusRes.data);
-      setEvents(eventsRes.data.items);
-      setAppUsers(appUsersRes.data);
-      setAdminCount(adminsRes.data.length);
-      setProfileCount(profilesRes.data.length);
-      setBackendOnline(healthRes.data.status === "ok");
-
-      try {
-        const cameraRes = await apiClient.get<CameraHealth>("/health/camera");
-        setCameraHealth(cameraRes.data);
-      } catch {
-        setCameraHealth(null);
-      }
-    } catch {
-      setError("Failed to load device data.");
-      setBackendOnline(false);
+      const res = await apiClient.get<FleetStatus>("/api/fleet/status");
+      setFleet(res.data);
+      setError("");
+    } catch (error) {
+      setError(getRegistryErrorMessage(error));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }
-
-  const toggleMode = async () => {
-    if (!status || togglingMode) return;
-
-    const nextMode = status.mode === "home" ? "away" : "home";
-    setTogglingMode(true);
-
-    try {
-      await apiClient.put("/api/system/mode", { mode: nextMode });
-      setStatus((current) => (current ? { ...current, mode: nextMode } : current));
-    } catch {
-      setError("Failed to update the device mode.");
-    } finally {
-      setTogglingMode(false);
-    }
   };
 
-  const silenceAlarm = async () => {
-    await apiClient.put("/api/system/alarm", { active: false });
-    setStatus((current) => (current ? { ...current, alarm_active: false } : current));
-  };
+  useEffect(() => {
+    void load();
+    const timer = setInterval(() => void load({ silent: true }), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const linkedUsers = appUsers.filter((user) => user.has_device_access);
-  const lastDetection = events[0]?.timestamp ?? null;
-  const lastFrameLabel = formatFrameAge(cameraHealth?.latest_frame_ts ?? null);
-
-  const serviceChecks = useMemo(
-    () => [
-      { label: "Backend API", ok: backendOnline, detail: backendOnline ? "Responding" : "Unavailable" },
-      { label: "OpenCV", ok: cameraHealth?.cv2_available ?? false, detail: cameraHealth?.cv2_available ? "Loaded" : "Missing" },
-      { label: "Engine", ok: cameraHealth?.engine_running ?? false, detail: cameraHealth?.engine_running ? "Running" : "Stopped" },
-      { label: "Camera", ok: cameraHealth?.camera_opened ?? false, detail: cameraHealth?.camera_opened ? "Opened" : "Disconnected" },
-      { label: "Ready", ok: cameraHealth?.camera_ready ?? false, detail: cameraHealth?.camera_ready ? "Streaming" : "Idle" },
-    ],
-    [backendOnline, cameraHealth]
-  );
+  const filteredNodes =
+    fleet?.nodes.filter(
+      (n) =>
+        n.device_name.toLowerCase().includes(search.toLowerCase()) ||
+        n.device_id.toLowerCase().includes(search.toLowerCase())
+    ) || [];
 
   return (
-    <div className="app-page devices-page">
-      <div className="app-page__header">
-        <div>
-          <p className="app-page__eyebrow">Device Command</p>
-          <h1 className="app-page__title">Active Devices</h1>
-          <p className="app-page__subtitle">
-            This view replaces the old user-management focus with the current running node, its
-            health signals, and the accounts assigned to it.
-          </p>
-        </div>
-        <div className="app-page__actions">
-          {piAddress && (
-            <span className="app-inline-note">
-              <Server size={14} />
-              {piAddress}
-            </span>
-          )}
-          {status?.alarm_active && (
-            <button className="app-button app-button--danger" onClick={() => void silenceAlarm()}>
-              <BellOff size={15} />
-              Silence Alarm
-            </button>
-          )}
-          <button className="app-button app-button--secondary" onClick={() => void toggleMode()} disabled={!status || togglingMode}>
-            {status?.mode === "away" ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-            {togglingMode ? "Updating..." : `Switch to ${status?.mode === "away" ? "Home" : "Away"}`}
-          </button>
-          <button className="app-button app-button--primary" onClick={() => void load({ silent: true })} disabled={loading || refreshing}>
-            <RefreshCw size={15} className={loading || refreshing ? "devices-spin" : ""} />
-            {loading || refreshing ? "Refreshing..." : "Refresh"}
-          </button>
-        </div>
-      </div>
-
-      {error && <p className="app-error">{error}</p>}
-
-      <div className="app-kpi-grid">
-        <KpiCard icon={<Server size={20} />} label="Connected Nodes" value={backendOnline ? "1" : "0"} meta={backendOnline ? "Current Pi is online" : "No active connection"} tone={backendOnline ? "success" : "danger"} />
-        <KpiCard icon={<Users size={20} />} label="Assigned Users" value={loading ? "..." : String(linkedUsers.length)} meta="Accounts with device access" tone="primary" />
-        <KpiCard icon={<Camera size={20} />} label="Known Faces" value={loading ? "..." : String(cameraHealth?.known_faces ?? profileCount)} meta="Profiles available to the recognizer" tone="success" />
-        <KpiCard icon={<Activity size={20} />} label="Latest Frame" value={loading ? "..." : lastFrameLabel} meta="Camera freshness from the active node" tone="warning" />
-      </div>
-
-      <div className="devices-grid">
-        <section className="app-card devices-card app-fade-up">
-          <div className="app-panel-header">
-            <div>
-              <h2 className="app-section-title">Device Registry</h2>
-              <p className="app-panel-subtitle">All currently reachable hardware from this frontend session.</p>
-            </div>
-            <span className={`app-status ${backendOnline ? "app-status--success" : "app-status--danger"}`}>
-              {backendOnline ? "Online" : "Offline"}
-            </span>
-          </div>
-
-          <div className="app-table-card">
-            <table className="app-table">
-              <thead>
-                <tr>
-                  <th>Device</th>
-                  <th>Mode</th>
-                  <th>Alarm</th>
-                  <th>Detection</th>
-                  <th>Linked Users</th>
-                  <th>Last Sync</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <div className="devices-device">
-                      <strong>{piAddress ?? "Not configured"}</strong>
-                      <span>Raspberry Pi active node</span>
-                    </div>
-                  </td>
-                  <td>{status ? status.mode.toUpperCase() : "Unknown"}</td>
-                  <td>{status?.alarm_active ? "Triggered" : "Clear"}</td>
-                  <td>{cameraHealth?.detection_method === "yolov8n" ? "YOLOv8n" : "OpenCV / default"}</td>
-                  <td>{linkedUsers.length}</td>
-                  <td>{status ? formatTimestamp(status.updated_at) : "Unknown"}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="app-card devices-card app-fade-up">
-          <div className="app-panel-header">
-            <div>
-              <h2 className="app-section-title">Service Readiness</h2>
-              <p className="app-panel-subtitle">Core services and camera pipeline checks from the live backend.</p>
-            </div>
-          </div>
-
-          <div className="devices-checks">
-            {serviceChecks.map((check) => (
-              <div key={check.label} className="devices-check">
-                <span className={`devices-check__dot ${check.ok ? "devices-check__dot--good" : "devices-check__dot--bad"}`} />
-                <div>
-                  <p>{check.label}</p>
-                  <span>{check.detail}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="devices-meta-grid">
-            <MetaRow label="Protection Mode" value={status ? status.mode.toUpperCase() : "Unknown"} icon={<ShieldCheck size={15} />} />
-            <MetaRow label="Alarm State" value={status?.alarm_active ? "Triggered" : "Clear"} icon={<ShieldAlert size={15} />} />
-            <MetaRow label="Admins" value={String(adminCount)} icon={<Users size={15} />} />
-            <MetaRow label="Detection Method" value={cameraHealth?.detection_method === "yolov8n" ? "YOLOv8n" : "Default"} icon={<Cpu size={15} />} />
-            <MetaRow label="Last Detection" value={lastDetection ? formatTimestamp(lastDetection) : "No recent events"} icon={<Activity size={15} />} />
-            <MetaRow label="Storage Watch" value={`${profileCount} profiles tracked`} icon={<HardDrive size={15} />} />
-          </div>
-        </section>
-      </div>
-
-      <section className="app-card devices-card app-fade-up">
-        <div className="app-panel-header">
+    <div className="devices-container">
+      <section className="devices-header animate-float">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div>
-            <h2 className="app-section-title">Assigned Access</h2>
-            <p className="app-panel-subtitle">Users currently linked to this node after removing the old user screen.</p>
+            <h1 className="devices-title">Devices </h1>
+            <p className="devices-eyebrow">Registry of Authorized IRIS Hardware Nodes</p>
+          </div>
+
+          <div className="stats-strip glass-panel">
+            <div className="flex flex-col">
+              <span className="stats-label">Total Nodes</span>
+              <span className="stats-value text-white">{loading ? "..." : fleet?.total_nodes}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="stats-label">Online</span>
+              <span className="stats-value text-primary">{loading ? "..." : fleet?.online_nodes}</span>
+            </div>
+            <div className="flex flex-col border-l border-white/5 pl-6">
+              <span className="stats-label">24H Fleet Events</span>
+              <span className="stats-value text-tertiary">{loading ? "..." : fleet?.total_events_today}</span>
+            </div>
           </div>
         </div>
+      </section>
 
-        {linkedUsers.length === 0 ? (
-          <p className="app-empty">No users currently have device access.</p>
-        ) : (
-          <div className="app-table-card">
-            <table className="app-table">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Role</th>
-                  <th>Access</th>
-                  <th>Profiles</th>
-                  <th>Push Token</th>
-                </tr>
-              </thead>
-              <tbody>
-                {linkedUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <div className="devices-device">
-                        <strong>{user.username}</strong>
-                        <span>ID {user.id}</span>
-                      </div>
-                    </td>
-                    <td>{user.role.replace(/_/g, " ")}</td>
-                    <td>{user.access_type}</td>
-                    <td>{user.face_profile_count}</td>
-                    <td>{user.fcm_token ? "Registered" : "Missing"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {error && <p className="error-message">{error}</p>}
+
+      <section className="glass-panel mb-8 flex flex-col md:flex-row gap-6 p-6 animate-float items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+          <input
+            className="w-full bg-black/40 border border-white/5 py-3 pl-12 pr-4 rounded-xl text-white outline-none focus:border-primary/50 transition-all"
+            placeholder="Search by Node ID or Name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <button className="action-btn primary" onClick={() => void load()}>
+          <RefreshCw size={16} className={`mr-2 ${refreshing ? "animate-spin" : ""}`} /> Sync Registry
+        </button>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {filteredNodes.map((node, i) => (
+          <NodeInventoryCard key={node.device_id} node={node} index={i} />
+        ))}
+        {!loading && filteredNodes.length === 0 && (
+          <div className="col-span-full py-20 text-center text-slate-500 italic glass-panel">
+            No hardware nodes found matching your search criteria.
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 }
 
-function KpiCard({
-  icon,
+function NodeInventoryCard({ node, index }: { node: PiNodeStatus; index: number }) {
+  const isOnline = node.status === "online";
+
+  return (
+    <div className="glass-panel overflow-hidden group animate-float" style={{ animationDelay: `${index * 0.05}s` }}>
+      <div className="flex flex-col sm:flex-row h-full">
+        <div className={`w-2 ${isOnline ? "bg-primary" : "bg-error"} transition-colors duration-500`} />
+
+        <div className="flex-1 p-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="text-xl font-serif text-white italic mb-1">{node.device_name}</h3>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{node.device_id}</p>
+            </div>
+            <div className="flex gap-3">
+              {node.tunnel_url && (
+                <a
+                  href={node.tunnel_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-2 glass-monolith rounded-lg text-slate-400 hover:text-primary transition-colors"
+                >
+                  <ExternalLink size={16} />
+                </a>
+              )}
+              <div className="p-2 glass-monolith rounded-lg text-slate-400">
+                <ChevronRight size={16} />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <NodeStat label="CPU" value={`${node.cpu_usage ?? 0}%`} icon={<Cpu size={12} />} color="text-primary" />
+            <NodeStat
+              label="Temp"
+              value={node.cpu_temp ? `${Math.round(node.cpu_temp)}°C` : "--"}
+              icon={<Thermometer size={12} />}
+              color="text-tertiary"
+            />
+            <NodeStat label="RAM" value={`${node.ram_usage ?? 0}%`} icon={<MemoryStick size={12} />} color="text-primary" />
+            <NodeStat
+              label="Network"
+              value={isOnline ? "Active" : "Silent"}
+              icon={<Radio size={12} />}
+              color={isOnline ? "text-primary" : "text-error"}
+            />
+          </div>
+
+          <div className="pt-6 border-t border-white/5 flex flex-wrap gap-y-4 justify-between items-center">
+            <div className="flex gap-6">
+              <div className="flex items-center gap-2">
+                <Activity size={14} className="text-slate-500" />
+                <div>
+                  <p className="text-[8px] uppercase text-slate-500">24H Activity</p>
+                  <p className="text-xs text-white font-mono">{node.total_events_today} events</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-slate-500" />
+                <div>
+                  <p className="text-[8px] uppercase text-slate-500">Last Seen</p>
+                  <p className="text-xs text-white font-mono">
+                    {new Date(node.last_heartbeat).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <p className="text-[8px] uppercase text-slate-500 mb-1">Local Identity</p>
+              <p className="text-[10px] font-mono text-slate-300">{node.local_ip ?? "Hidden"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NodeStat({
   label,
   value,
-  meta,
-  tone,
+  icon,
+  color,
 }: {
-  icon: React.ReactNode;
   label: string;
   value: string;
-  meta: string;
-  tone: "primary" | "success" | "warning" | "danger";
+  icon: ReactNode;
+  color: string;
 }) {
-  const palette =
-    tone === "success"
-      ? { accent: "#16A34A", soft: "#DCFCE7" }
-      : tone === "warning"
-        ? { accent: "#EA580C", soft: "#FFEDD5" }
-        : tone === "danger"
-          ? { accent: "#DC2626", soft: "#FEE2E2" }
-          : { accent: "#2563EB", soft: "#DBEAFE" };
-
   return (
-    <article
-      className="app-card app-kpi-card app-fade-up"
-      style={
-        {
-          "--kpi-accent": `${palette.accent}20`,
-          "--kpi-accent-soft": palette.soft,
-          "--kpi-accent-text": palette.accent,
-        } as React.CSSProperties
-      }
-    >
-      <div className="app-kpi-card__header">
-        <div>
-          <p className="app-kpi-card__label">{label}</p>
-          <p className="app-kpi-card__value">{value}</p>
-          <p className="app-kpi-card__meta">{meta}</p>
-        </div>
-        <span className="app-kpi-card__icon">{icon}</span>
+    <div className="space-y-1">
+      <div className="flex items-center gap-1">
+        <span className="text-slate-500">{icon}</span>
+        <span className="text-[8px] uppercase text-slate-500 font-bold">{label}</span>
       </div>
-    </article>
-  );
-}
-
-function MetaRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="devices-meta">
-      <div className="devices-meta__label">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <strong>{value}</strong>
+      <p className={`text-sm font-serif ${color}`}>{value}</p>
     </div>
   );
-}
-
-function formatFrameAge(timestamp: number | null) {
-  if (!timestamp) return "Unavailable";
-
-  const ageMs = Date.now() - timestamp * 1000;
-  if (ageMs < 1000) return `${Math.round(ageMs)} ms`;
-  return `${(ageMs / 1000).toFixed(1)} s`;
-}
-
-function formatTimestamp(value: string) {
-  return new Date(value).toLocaleString();
 }

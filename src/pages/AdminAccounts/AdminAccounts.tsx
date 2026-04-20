@@ -1,6 +1,16 @@
-import { useEffect, useState, type CSSProperties } from "react";
-import { Key, Shield, Trash2, UserPlus, Users } from "lucide-react";
-import { apiClient } from "../../lib/api";
+import { useEffect, useState } from "react";
+import { 
+  Shield, 
+  Trash2, 
+  UserPlus, 
+  X, 
+  Lock, 
+  User, 
+  Fingerprint, 
+  ShieldCheck, 
+  Activity
+} from "lucide-react";
+import { apiClient, getApiErrorMessage } from "../../lib/api";
 import "./AdminAccounts.css";
 
 interface AdminAccount {
@@ -17,86 +27,51 @@ interface BackendAdminAccount {
   created_at: string;
 }
 
-interface Homeowner {
-  id: number;
-  username: string;
-  role: string;
-}
-
-interface AppUser {
-  id: number;
-  username: string;
-  role: string;
-  face_profile_count: number;
-  access_type: string;
-  has_device_access: boolean;
-}
-
 export default function AdminAccounts() {
   const [accounts, setAccounts] = useState<AdminAccount[]>([]);
-  const [homeowners, setHomeowners] = useState<Homeowner[]>([]);
-  const [appUsers, setAppUsers] = useState<AppUser[]>([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({ username: "", password: "" });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [deleteHomeownerConfirm, setDeleteHomeownerConfirm] = useState<number | null>(null);
-  const [resetPasswordId, setResetPasswordId] = useState<number | null>(null);
-  const [newPassword, setNewPassword] = useState("");
   const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [newAccount, setNewAccount] = useState({ username: "", password: "" });
-  const hasReachedLimit = accounts.length >= 2;
 
   useEffect(() => {
-    void loadAll();
+    void loadAdmins();
   }, []);
 
-  async function loadAll() {
+  async function loadAdmins() {
     setLoading(true);
     setFormError("");
-
     try {
-      const [accountsRes, homeownersRes, appUsersRes] = await Promise.all([
-        apiClient.get<BackendAdminAccount[]>("/api/auth/admin/accounts"),
-        apiClient.get<Homeowner[]>("/api/auth/admin/homeowners").catch(() => ({ data: [] as Homeowner[] })),
-        apiClient.get<AppUser[]>("/api/auth/admin/app-users").catch(() => ({ data: [] as AppUser[] })),
-      ]);
-
-      setAccounts(accountsRes.data.map(mapAdminAccount));
-      setHomeowners(homeownersRes.data);
-      setAppUsers(appUsersRes.data);
+      const res = await apiClient.get<BackendAdminAccount[]>("/api/auth/admin/accounts");
+      setAccounts(res.data.map(mapAdminAccount));
     } catch {
-      setFormError("Failed to load admin data.");
+      setFormError("Failed to load administrative hierarchy.");
     } finally {
       setLoading(false);
     }
   }
 
-  const handleAdd = async () => {
-    if (!newAccount.username.trim() || !newAccount.password.trim()) {
-      setFormError("Username and password are required.");
-      return;
-    }
-
-    if (hasReachedLimit) {
-      setFormError("Only 2 admin accounts are allowed.");
+  const handleAddAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdmin.username || !newAdmin.password) {
+      setFormError("Identity and Cipher are required.");
       return;
     }
 
     setSubmitting(true);
-    setFormError("");
-
     try {
-      const response = await apiClient.post<BackendAdminAccount>("/api/auth/admin/accounts", {
-        username: newAccount.username.trim(),
-        password: newAccount.password,
+      await apiClient.post("/api/auth/admin/accounts", {
+        username: newAdmin.username,
+        password: newAdmin.password,
+        role: "admin"
       });
-
-      setAccounts((current) => [...current, mapAdminAccount(response.data)]);
-      setNewAccount({ username: "", password: "" });
-      setShowModal(false);
-    } catch {
-      setFormError("Failed to create admin account.");
+      setShowAddModal(false);
+      setNewAdmin({ username: "", password: "" });
+      void loadAdmins();
+    } catch (error) {
+      setFormError(getApiErrorMessage(error, "Failed to authorize new admin."));
     } finally {
       setSubmitting(false);
     }
@@ -105,309 +80,177 @@ export default function AdminAccounts() {
   const handleDelete = async (id: string) => {
     try {
       await apiClient.delete(`/api/auth/admin/accounts/${id}`);
-      setAccounts((current) => current.filter((account) => account.id !== id));
+      setAccounts((current) => current.filter((a) => a.id !== id));
       setDeleteConfirm(null);
     } catch {
-      setFormError("Failed to delete admin account.");
+      setFormError("Failed to revoke admin privileges.");
     }
   };
-
-  const handleDeleteHomeowner = async (id: number) => {
-    try {
-      await apiClient.delete(`/api/auth/admin/homeowners/${id}`);
-      setHomeowners((current) => current.filter((homeowner) => homeowner.id !== id));
-      setDeleteHomeownerConfirm(null);
-    } catch {
-      setFormError("Failed to delete homeowner.");
-    }
-  };
-
-  const handleResetPassword = async (id: number) => {
-    if (!newPassword.trim() || newPassword.length < 6) {
-      setFormError("Password must be at least 6 characters.");
-      return;
-    }
-
-    try {
-      await apiClient.put(`/api/auth/admin/homeowners/${id}/password`, { password: newPassword });
-      setResetPasswordId(null);
-      setNewPassword("");
-    } catch {
-      setFormError("Failed to reset password.");
-    }
-  };
-
-  const deviceAccessUsers = appUsers.filter((user) => user.has_device_access).length;
 
   return (
-    <div className="app-page admin-page">
-      <div className="app-page__header">
+    <div className="admin-accounts-container">
+      {/* Dynamic Header */}
+      <header className="admin-header-row">
         <div>
-          <p className="app-page__eyebrow">Admin Governance</p>
-          <h1 className="app-page__title">Admin Accounts</h1>
-          <p className="app-page__subtitle">
-            Manage administrator credentials, keep homeowner access healthy, and stay aligned with
-            the leaner device-focused navigation.
-          </p>
+          <p className="admin-eyebrow">Clearance Level 01</p>
+          <h1 className="admin-title">Administrative Accounts</h1>
         </div>
-        <div className="app-page__actions">
-          <button className="app-button app-button--primary" onClick={() => setShowModal(true)} disabled={hasReachedLimit}>
-            <UserPlus size={15} />
-            Add Admin
-          </button>
-        </div>
-      </div>
 
-      {formError && <p className="app-error">{formError}</p>}
-
-      <div className="admin-kpis">
-        <AdminKpi icon={<Shield size={20} />} label="Admin Accounts" value={loading ? "..." : String(accounts.length)} meta="Maximum of two dashboard admins" tone="primary" />
-        <AdminKpi icon={<Users size={20} />} label="Homeowners" value={loading ? "..." : String(homeowners.length)} meta="Primary and invited homeowner accounts" tone="success" />
-        <AdminKpi icon={<Users size={20} />} label="Total App Users" value={loading ? "..." : String(appUsers.length)} meta="Accounts stored in the backend" tone="warning" />
-        <AdminKpi icon={<Key size={20} />} label="Device Access" value={loading ? "..." : String(deviceAccessUsers)} meta="Users currently linked to a device" tone="danger" />
-      </div>
-
-      <section className="app-card admin-panel app-fade-up">
-        <div className="app-panel-header">
-          <div>
-            <h2 className="app-section-title">Administrator Accounts</h2>
-            <p className="app-panel-subtitle">Direct access to the web dashboard. Limited to two operators.</p>
+        <div className="registry-stats">
+          <div className="stat-item">
+            <span className="stat-label">Active Nodes</span>
+            <span className="stat-value primary">{loading ? ".." : accounts.length} / 3</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Hierarchy Sync</span>
+            <span className="stat-value text-success">NOMINAL</span>
           </div>
         </div>
+      </header>
 
-        <div className="app-table-card">
-          <table className="app-table">
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={4}>Loading admin accounts...</td>
-                </tr>
-              ) : accounts.length === 0 ? (
-                <tr>
-                  <td colSpan={4}>No admin accounts found.</td>
-                </tr>
-              ) : (
-                accounts.map((account) => (
-                  <tr key={account.id}>
-                    <td>
-                      <div className="admin-identity">
-                        <strong>@{account.username}</strong>
-                        <span>ID {account.id}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="app-status app-status--primary">{formatRole(account.role)}</span>
-                    </td>
-                    <td>{new Date(account.createdAt).toLocaleString()}</td>
-                    <td>
-                      {deleteConfirm === account.id ? (
-                        <div className="admin-inline-actions">
-                          <button className="app-button app-button--danger" onClick={() => void handleDelete(account.id)}>
-                            Confirm
-                          </button>
-                          <button className="app-button app-button--secondary" onClick={() => setDeleteConfirm(null)}>
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button className="admin-action" onClick={() => setDeleteConfirm(account.id)}>
-                          <Trash2 size={15} />
-                          Remove
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {formError && (
+        <div className="bg-error/10 border border-error/20 text-error p-4 rounded-xl mb-12 flex items-center gap-3 animate-float">
+          <ShieldCheck size={18} />
+          <span className="text-sm font-medium">{formError}</span>
         </div>
-      </section>
+      )}
 
-      <section className="app-card admin-panel app-fade-up">
-        <div className="app-panel-header">
-          <div>
-            <h2 className="app-section-title">Homeowner Directory</h2>
-            <p className="app-panel-subtitle">Reset homeowner credentials or remove stale accounts when needed.</p>
-          </div>
-        </div>
-
-        <div className="app-table-card">
-          <table className="app-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Password</th>
-                <th>Delete</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={4}>Loading homeowners...</td>
-                </tr>
-              ) : homeowners.length === 0 ? (
-                <tr>
-                  <td colSpan={4}>No homeowners found.</td>
-                </tr>
-              ) : (
-                homeowners.map((homeowner) => (
-                  <tr key={homeowner.id}>
-                    <td>
-                      <div className="admin-identity">
-                        <strong>@{homeowner.username}</strong>
-                        <span>ID {homeowner.id}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="app-status app-status--neutral">{formatRole(homeowner.role)}</span>
-                    </td>
-                    <td>
-                      {resetPasswordId === homeowner.id ? (
-                        <div className="admin-password-row">
-                          <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(event) => setNewPassword(event.target.value)}
-                            placeholder="New password"
-                            className="app-input"
-                          />
-                          <button className="app-button app-button--primary" onClick={() => void handleResetPassword(homeowner.id)}>
-                            Save
-                          </button>
-                          <button className="app-button app-button--secondary" onClick={() => { setResetPasswordId(null); setNewPassword(""); }}>
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button className="admin-action" onClick={() => setResetPasswordId(homeowner.id)}>
-                          <Key size={15} />
-                          Reset Password
-                        </button>
-                      )}
-                    </td>
-                    <td>
-                      {deleteHomeownerConfirm === homeowner.id ? (
-                        <div className="admin-inline-actions">
-                          <button className="app-button app-button--danger" onClick={() => void handleDeleteHomeowner(homeowner.id)}>
-                            Confirm
-                          </button>
-                          <button className="app-button app-button--secondary" onClick={() => setDeleteHomeownerConfirm(null)}>
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button className="admin-action admin-action--danger" onClick={() => setDeleteHomeownerConfirm(homeowner.id)}>
-                          <Trash2 size={15} />
-                          Remove
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {showModal && (
-        <div className="app-modal-overlay" onClick={() => { setShowModal(false); setFormError(""); }}>
-          <div className="app-card app-modal" onClick={(event) => event.stopPropagation()}>
-            <h2 className="app-modal__title">Add Admin Account</h2>
-            <p className="app-modal__desc">This account can sign in to the dashboard immediately after creation.</p>
-
-            <div className="app-form-grid">
-              <div className="app-field">
-                <label>Username</label>
-                <input
-                  type="text"
-                  value={newAccount.username}
-                  onChange={(event) => setNewAccount((current) => ({ ...current, username: event.target.value }))}
-                  placeholder="e.g. iris-admin"
-                  className="app-input"
-                />
-              </div>
-              <div className="app-field">
-                <label>Password</label>
-                <input
-                  type="password"
-                  value={newAccount.password}
-                  onChange={(event) => setNewAccount((current) => ({ ...current, password: event.target.value }))}
-                  placeholder="Enter a secure password"
-                  className="app-input"
-                />
-              </div>
+      {/* Identity Grid */}
+      <div className="identity-grid">
+        {loading ? (
+            <div className="col-span-full py-40 flex flex-col items-center gap-6">
+                <Fingerprint className="animate-pulse text-primary/20" size={64} />
+                <p className="text-slate-500 italic uppercase tracking-widest text-[10px]">Synchronizing Hierarchy Registry...</p>
             </div>
+        ) : (
+          <>
+            {accounts.map((account) => (
+              <div key={account.id} className="admin-identity-block">
+                <div className="block-header">
+                  <div className="block-avatar">
+                    <Shield size={24} />
+                  </div>
+                  <span className="block-badge">Verified Node</span>
+                </div>
 
-            {hasReachedLimit && <p className="app-error">Admin limit reached. Remove an existing admin to continue.</p>}
+                <div className="block-identity-info">
+                  <h3 className="block-username">@{account.username}</h3>
+                  <p className="block-role-label">Global Core Administrator</p>
+                </div>
 
-            <div className="app-modal__actions">
-              <button className="app-button app-button--secondary" onClick={() => { setShowModal(false); setFormError(""); }}>
-                Cancel
+                <div className="block-details">
+                  <div className="detail-row">
+                    <span className="detail-label">Node Status</span>
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--app-primary)]"></span>
+                        <span className="detail-value text-white font-bold">Active</span>
+                    </div>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Identity ID</span>
+                    <span className="detail-value mono">IR-{account.id.padStart(4, '0')}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Commission Date</span>
+                    <span className="detail-value">{new Date(account.createdAt).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    })}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Clearance</span>
+                    <span className="detail-value">Root Access</span>
+                  </div>
+                </div>
+
+                <div className="block-actions">
+                  <button className="block-btn">
+                    <Activity size={14} className="mr-2" /> Audit
+                  </button>
+                  {deleteConfirm === account.id ? (
+                    <div className="flex-1 flex gap-2">
+                         <button className="block-btn danger flex-1" onClick={() => void handleDelete(account.id)}>Confirm</button>
+                         <button className="block-btn w-12" onClick={() => setDeleteConfirm(null)}><X size={14} /></button>
+                    </div>
+                  ) : (
+                    <button className="block-btn danger" onClick={() => setDeleteConfirm(account.id)}>
+                      <Trash2 size={14} className="mr-2" /> Revoke
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {accounts.length < 3 && (
+              <div className="add-identity-block" onClick={() => setShowAddModal(true)}>
+                <div className="add-icon-circle">
+                  <UserPlus size={32} />
+                </div>
+                <h4 className="add-title">Authorize New Node</h4>
+                <p className="add-subtitle">{3 - accounts.length} slots remaining in core</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Modern Commission Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowAddModal(false)}>
+          <div className="modal-surface">
+            <header className="modal-header-top">
+              <div>
+                <h2 className="modal-main-title">New Commission</h2>
+                <p className="modal-desc">Authorize a new administrative node.</p>
+              </div>
+              <button className="icon-btn" onClick={() => setShowAddModal(false)}>
+                <X size={20} />
               </button>
-              <button className="app-button app-button--primary" onClick={() => void handleAdd()} disabled={submitting || hasReachedLimit}>
-                {submitting ? "Creating..." : "Create Admin"}
-              </button>
-            </div>
+            </header>
+
+            <form onSubmit={handleAddAdmin} className="form-stack">
+              <div>
+                <label className="cyber-label">Terminal Identity</label>
+                <div className="cyber-field">
+                  <User size={18} className="cyber-field-icon" />
+                  <input 
+                    placeholder="Enter unique username"
+                    value={newAdmin.username}
+                    onChange={e => setNewAdmin({...newAdmin, username: e.target.value})}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="cyber-label">Encryption Cipher</label>
+                <div className="cyber-field">
+                  <Lock size={18} className="cyber-field-icon" />
+                  <input 
+                    type="password"
+                    placeholder="Set secure access key"
+                    value={newAdmin.password}
+                    onChange={e => setNewAdmin({...newAdmin, password: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-6">
+                <button type="button" className="action-btn-ghost flex-1 h-14 rounded-2xl" onClick={() => setShowAddModal(false)}>Abort</button>
+                <button 
+                  type="submit" 
+                  className="action-btn primary flex-1 h-14 rounded-2xl font-bold" 
+                  disabled={submitting}
+                >
+                  {submitting ? "Processing..." : "Commission Node"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
     </div>
-  );
-}
-
-function AdminKpi({
-  icon,
-  label,
-  value,
-  meta,
-  tone,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  meta: string;
-  tone: "primary" | "success" | "warning" | "danger";
-}) {
-  const palette =
-    tone === "success"
-      ? { accent: "#16A34A", soft: "#DCFCE7" }
-      : tone === "warning"
-        ? { accent: "#EA580C", soft: "#FFEDD5" }
-        : tone === "danger"
-          ? { accent: "#DC2626", soft: "#FEE2E2" }
-          : { accent: "#2563EB", soft: "#DBEAFE" };
-
-  return (
-    <article
-      className="app-card app-kpi-card app-fade-up"
-      style={
-        {
-          "--kpi-accent": `${palette.accent}20`,
-          "--kpi-accent-soft": palette.soft,
-          "--kpi-accent-text": palette.accent,
-        } as CSSProperties
-      }
-    >
-      <div className="app-kpi-card__header">
-        <div>
-          <p className="app-kpi-card__label">{label}</p>
-          <p className="app-kpi-card__value">{value}</p>
-          <p className="app-kpi-card__meta">{meta}</p>
-        </div>
-        <span className="app-kpi-card__icon">{icon}</span>
-      </div>
-    </article>
   );
 }
 
@@ -418,8 +261,4 @@ function mapAdminAccount(account: BackendAdminAccount): AdminAccount {
     role: account.role,
     createdAt: account.created_at,
   };
-}
-
-function formatRole(role: string) {
-  return role.replace(/_/g, " ");
 }

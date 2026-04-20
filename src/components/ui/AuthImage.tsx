@@ -15,7 +15,6 @@ export default function AuthImage({ src, alt, className, fallback }: AuthImagePr
 
   useEffect(() => {
     if (!src) {
-      setFailed(true);
       return;
     }
 
@@ -55,7 +54,7 @@ export default function AuthImage({ src, alt, className, fallback }: AuthImagePr
     };
   }, []);
 
-  if (failed || !blobUrl) {
+  if (!src || failed || !blobUrl) {
     return fallback ? <>{fallback}</> : null;
   }
 

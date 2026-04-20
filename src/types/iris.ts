@@ -1,6 +1,6 @@
 export type SecurityMode = "home" | "away";
 
-export type EventStatus = "authorized" | "unknown" | "unverifiable";
+export type EventStatus = "authorized" | "unknown" | "unverifiable";       
 export type UserRole = "admin" | "homeowner_primary" | "homeowner_invited";
 
 export interface SecurityEvent {
@@ -44,6 +44,15 @@ export interface AppUserPermission {
   can_manage_profiles: boolean;
 }
 
+export interface AppUserSecondary {
+    id: number;
+    username: string;
+    role: string;
+    created_at: string;
+    permissions: AppUserPermission | null;
+    last_active: string | null;
+}
+
 export interface AppUserAccount {
   id: number;
   username: string;
@@ -55,4 +64,28 @@ export interface AppUserAccount {
   access_type: string;
   has_device_access: boolean;
   permissions: AppUserPermission | null;
+  secondary_users: AppUserSecondary[];
+  associated_device_id: string | null;
+  last_active: string | null;
+}
+
+export interface PiNodeStatus {
+  device_id: string;
+  device_name: string;
+  tunnel_url: string | null;
+  local_ip: string | null;
+  cpu_usage: number | null;
+  cpu_temp: number | null;
+  ram_usage: number | null;
+  uptime_seconds: number | null;
+  total_events_today: number;
+  status: "online" | "offline";
+  last_heartbeat: string;
+}
+
+export interface FleetStatus {
+  total_nodes: number;
+  online_nodes: number;
+  total_events_today: number;
+  nodes: PiNodeStatus[];
 }

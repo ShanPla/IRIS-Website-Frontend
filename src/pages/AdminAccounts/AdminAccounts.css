@@ -1,79 +1,357 @@
-.admin-kpis {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+.admin-accounts-container {
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
-.admin-panel {
-  padding: 22px;
+.admin-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 48px;
 }
 
-.admin-identity {
+.admin-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--app-primary);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.admin-title {
+  font-family: "Instrument Serif", serif;
+  font-size: clamp(48px, 6vw, 64px);
+  font-weight: 400;
+  font-style: italic;
+  color: white;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* Slot Allocation Stats */
+.registry-stats {
+  display: flex;
+  gap: 32px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+.stat-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
-.admin-identity strong {
-  color: var(--app-text);
-  font-size: 14px;
-}
-
-.admin-identity span {
-  color: var(--app-text-muted);
-  font-size: 12px;
-}
-
-.admin-inline-actions,
-.admin-password-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.admin-password-row .app-input {
-  min-width: 190px;
-}
-
-.admin-action {
-  min-height: 38px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  background: var(--app-surface);
-  color: var(--app-text-muted);
-  cursor: pointer;
+.stat-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748b;
   font-weight: 600;
 }
 
-.admin-action:hover {
-  border-color: #bfdbfe;
+.stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  margin-top: 2px;
+}
+
+.stat-value.primary { color: var(--app-primary); }
+
+/* Identity Registry Grid */
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 32px;
+}
+
+.admin-identity-block {
+  position: relative;
+  background: rgba(18, 18, 18, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 32px;
+  padding: 32px;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-identity-block:hover {
+  transform: translateY(-8px);
+  background: rgba(18, 18, 18, 0.6);
+  border-color: rgba(158, 202, 255, 0.3);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* Profile Section in Card */
+.block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.block-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(158, 202, 255, 0.1) 0%, transparent 100%);
+  border: 1px solid rgba(158, 202, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--app-primary);
-  background: var(--app-secondary-soft);
+  box-shadow: inset 0 0 15px rgba(158, 202, 255, 0.1);
 }
 
-.admin-action--danger:hover {
-  border-color: #fecaca;
-  color: var(--app-danger);
-  background: var(--app-danger-soft);
+.block-badge {
+  padding: 4px 10px;
+  background: rgba(158, 202, 255, 0.06);
+  border: 1px solid rgba(158, 202, 255, 0.1);
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--app-primary);
 }
 
-@media (max-width: 1200px) {
-  .admin-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.block-identity-info {
+  margin-bottom: 32px;
 }
 
-@media (max-width: 720px) {
-  .admin-kpis {
-    grid-template-columns: 1fr;
-  }
+.block-username {
+  font-family: "Instrument Serif", serif;
+  font-size: 32px;
+  color: white;
+  font-style: italic;
+  line-height: 1.1;
+}
 
-  .admin-panel {
-    padding: 18px;
-  }
+.block-role-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* Info List */
+.block-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #475569;
+  font-weight: 700;
+}
+
+.detail-value {
+  font-size: 13px;
+  color: #cbd5e1;
+  font-family: 'Inter', sans-serif;
+}
+
+.detail-value.mono {
+  font-family: monospace;
+  color: var(--app-primary);
+  opacity: 0.8;
+}
+
+/* Actions in Block */
+.block-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.block-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  color: #94a3b8;
+}
+
+.block-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.block-btn.danger:hover {
+  background: rgba(255, 180, 171, 0.1);
+  color: #ffb4ab;
+  border-color: rgba(255, 180, 171, 0.2);
+}
+
+/* Add Placeholder Block */
+.add-identity-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: rgba(158, 202, 255, 0.01);
+  border: 2px dashed rgba(158, 202, 255, 0.1);
+  border-radius: 32px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+
+.add-identity-block:hover {
+  background: rgba(158, 202, 255, 0.03);
+  border-color: rgba(158, 202, 255, 0.3);
+  transform: scale(0.99);
+}
+
+.add-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(158, 202, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-primary);
+  margin-bottom: 24px;
+  box-shadow: 0 0 20px rgba(158, 202, 255, 0.1);
+}
+
+.add-title {
+  font-family: "Instrument Serif", serif;
+  font-size: 24px;
+  color: white;
+  font-style: italic;
+}
+
+.add-subtitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+/* Modal UI */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-surface {
+  background: #0a0a0a;
+  width: 100%;
+  max-width: 460px;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.9);
+  animation: modalScaleUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScaleUp {
+  from { opacity: 0; transform: scale(0.9) translateY(30px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.modal-main-title {
+  font-family: "Instrument Serif", serif;
+  font-size: 32px;
+  color: white;
+  font-style: italic;
+}
+
+.modal-desc {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.input-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.cyber-field {
+  position: relative;
+}
+
+.cyber-field input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px 16px 16px 48px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.cyber-field input:focus {
+  border-color: var(--app-primary);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 25px rgba(158, 202, 255, 0.1);
+}
+
+.cyber-field-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--app-primary);
+  opacity: 0.5;
 }
