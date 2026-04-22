@@ -17,7 +17,7 @@ import {
 } from "../../lib/api";
 import "./Login.css";
 import { Button } from "../../components/ui/neon-button";
-import earthLightReturnVideo from "../../assets/Earth_LightReturn - Trim.mp4";
+import goldGlobeVideo from "../../assets/Gold_Globe.mp4";
 
 const FOOTER_ITEMS = [
   { label: "Developed by SSR", tone: "strong" as const },
@@ -30,11 +30,30 @@ const FOOTER_ITEMS = [
   { label: "IRIS Control Panel", tone: "muted" as const },
 ];
 
+type HlsInstance = {
+  loadSource: (source: string) => void;
+  attachMedia: (media: HTMLMediaElement) => void;
+  on: (event: string, callback: () => void) => void;
+};
+
+type HlsConstructor = {
+  new (): HlsInstance;
+  isSupported: () => boolean;
+  Events: {
+    MANIFEST_PARSED: string;
+  };
+};
+
+type HlsWindow = Window & typeof globalThis & {
+  Hls?: HlsConstructor;
+};
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const muxVideoRef = useRef<HTMLVideoElement | null>(null);
   const marqueeTrackRef = useRef<HTMLDivElement | null>(null);
   const usernameInputId = useId();
   const passwordInputId = useId();
@@ -47,6 +66,20 @@ export default function Login() {
   const [videoReady, setVideoReady] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [marqueeDistance, setMarqueeDistance] = useState(0);
+
+  // Randomized Shooting Stars
+  const stars = useMemo(() => {
+    return Array.from({ length: 12 }).map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 45}%`,
+      right: `${-10 - Math.random() * 10}%`,
+      delay: `${Math.random() * 8}s`, // Reduced delay from 12s to 8s
+      duration: `${4 + Math.random() * 5}s`, // Slightly faster travel time
+      width: `${80 + Math.random() * 120}px`,
+      angle: `${150 + Math.random() * 20}deg`,
+      distance: `-${1400 + Math.random() * 800}px`,
+    }));
+  }, []);
 
   const configuredBackendUrl = useMemo(
     () => normalizeBackendUrl(getStoredBackendUrl() ?? ""),
@@ -78,7 +111,7 @@ export default function Login() {
     video.playsInline = true;
     video.preload = "auto";
     video.loop = true;
-    video.src = earthLightReturnVideo;
+    video.src = goldGlobeVideo;
 
     video.addEventListener("canplay", handleReady);
     video.addEventListener("error", handleError);
@@ -89,6 +122,45 @@ export default function Login() {
       video.removeEventListener("canplay", handleReady);
       video.removeEventListener("error", handleError);
     };
+  }, []);
+
+  useEffect(() => {
+    const muxVideo = muxVideoRef.current;
+    if (!muxVideo) return;
+
+    muxVideo.muted = true;
+    muxVideo.playsInline = true;
+    muxVideo.loop = true;
+
+    const hlsUrl = "https://stream.mux.com/01yW6GoUz01OTXk5w1Rt1MHkJWlCGIwj46SUONJZ4DJUE.m3u8";
+
+    // Check if HLS.js is already loaded (via script tag in index.html or dynamic load)
+    const playHls = () => {
+      const Hls = (window as HlsWindow).Hls;
+      if (Hls && Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(hlsUrl);
+        hls.attachMedia(muxVideo);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          muxVideo.playbackRate = 0.5;
+          void muxVideo.play().catch(() => undefined);
+        });
+      } else if (muxVideo.canPlayType("application/vnd.apple.mpegurl")) {
+        // Native support (Safari)
+        muxVideo.src = hlsUrl;
+        muxVideo.playbackRate = 0.5;
+        void muxVideo.play().catch(() => undefined);
+      }
+    };
+
+    if (!(window as HlsWindow).Hls) {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
+      script.onload = playHls;
+      document.head.appendChild(script);
+    } else {
+      playHls();
+    }
   }, []);
 
   useEffect(() => {
@@ -171,7 +243,7 @@ export default function Login() {
       setSubmitting(false);
 
       if (result.success) {
-        navigate("/dashboard", { replace: true });
+        navigate("/devices", { replace: true });
       } else {
         setError(result.error ?? "Login failed. Please verify credentials.");
       }
@@ -182,6 +254,14 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-page__mesh" aria-hidden="true">
+        <video
+          ref={muxVideoRef}
+          className="login-page__background-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
         <video
           ref={videoRef}
           className={`login-page__video ${
@@ -197,8 +277,24 @@ export default function Login() {
         <div className="login-page__starfield" />
 
         <div className="login-page__shooting-stars">
-          <span className="login-page__shooting-star login-page__shooting-star--three" />
-          <span className="login-page__shooting-star login-page__shooting-star--four" />
+          {stars.map((star) => (
+            <span
+              key={star.id}
+              className="login-page__shooting-star"
+              style={
+                {
+                  "--star-top": star.top,
+                  "--star-right": star.right,
+                  "--star-delay": star.delay,
+                  "--star-duration": star.duration,
+                  "--star-width": star.width,
+                  "--star-angle": star.angle,
+                  "--star-x": star.x,
+                  "--star-y": star.y,
+                } as CSSProperties
+              }
+            />
+          ))}
         </div>
 
         <div className="login-page__video-overlay" />
@@ -239,15 +335,24 @@ export default function Login() {
             </p>
           </div>
 
-          {error && (
-            <p
-              id={loginErrorId}
-              className="login-alert login-alert--danger"
-              role="alert"
-              aria-live="assertive"
-            >
-              {error}
-            </p>
+          {(error || submitting) && (
+            <div className="login-alert-container">
+              {submitting ? (
+                <div className="login-alert login-alert--info">
+                  <Radio className="login-alert__icon animate-pulse" size={14} />
+                  <span>Verifying Terminal Identity...</span>
+                </div>
+              ) : (
+                <p
+                  id={loginErrorId}
+                  className="login-alert login-alert--danger"
+                  role="alert"
+                  aria-live="assertive"
+                >
+                  {error}
+                </p>
+              )}
+            </div>
           )}
 
           <form className="login-form" onSubmit={handleSubmit}>
@@ -299,7 +404,7 @@ export default function Login() {
               type="submit"
               className="login-submit"
               disabled={submitting}
-              variant="solid"
+              variant="default"
               aria-busy={submitting}
             >
               {submitting ? "Initializing..." : "Log In"}

@@ -1,7 +1,28 @@
-import React from "react";
-import { cn } from "../../lib/utils";
-import type { VariantProps } from "class-variance-authority";
-import { buttonVariants } from "./button-variants";
+import React from 'react'
+import { cn } from '../../lib/utils'
+import { cva, type VariantProps } from "class-variance-authority";
+
+const buttonVariants = cva(
+    "relative group border text-foreground mx-auto text-center rounded-full transition-all duration-300 active:scale-[0.97] active:duration-75",
+    {
+        variants: {
+            variant: {
+                default: "bg-blue-500/5 hover:bg-blue-500/10 border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.15)] hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] active:bg-blue-500/20 active:border-blue-400",
+                solid: "bg-blue-600 hover:bg-blue-500 text-white border-blue-400/50 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_rgba(59,130,246,0.6)] active:brightness-125 transition-all duration-200",
+                ghost: "border-transparent bg-transparent hover:border-zinc-600 hover:bg-white/10 active:bg-white/20",
+            },
+            size: {
+                default: "px-7 py-2",
+                sm: "px-4 py-1",
+                lg: "px-10 py-3",
+            },
+        },
+        defaultVariants: {
+            variant: "default",
+            size: "default",
+        },
+    }
+);
 
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -15,29 +36,30 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 ref={ref}
                 {...props}
             >
-                {/* Top Neon Line */}
+                {/* Neon Top Shine */}
                 <span className={cn(
-                    "absolute h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out inset-x-0 inset-y-0 bg-gradient-to-r w-3/4 mx-auto from-transparent via-primary to-transparent hidden", 
-                    neon && "block"
+                    "absolute top-0 h-px opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out inset-x-0 bg-gradient-to-r w-3/4 mx-auto from-transparent via-blue-400 to-transparent z-10",
+                    neon ? "block" : "hidden"
                 )} />
                 
-                {children}
-                
-                {/* Bottom Neon Line */}
+                <span className="relative z-10">{children}</span>
+
+                {/* Neon Bottom Glow Line */}
                 <span className={cn(
-                    "absolute group-hover:opacity-50 transition-opacity duration-700 ease-in-out inset-x-0 h-px -bottom-px bg-gradient-to-r w-3/4 mx-auto from-transparent via-primary to-transparent hidden", 
-                    neon && "block"
+                    "absolute -bottom-px h-px opacity-0 group-hover:opacity-100 transition-all duration-700 ease-in-out inset-x-0 bg-gradient-to-r w-2/3 mx-auto from-transparent via-blue-400/80 to-transparent z-10",
+                    neon ? "block" : "hidden"
                 )} />
-                {/* Smooth Hover Glow Background */}
+
+                {/* Outer Ambient Glow */}
                 <span className={cn(
-                    "absolute inset-0 rounded-full bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-sm",
-                    neon && "block"
+                    "absolute inset-0 rounded-full bg-blue-500/0 group-hover:bg-blue-500/5 transition-all duration-500 -z-10 blur-md",
+                    neon ? "block" : "hidden"
                 )} />
             </button>
         );
     }
 )
 
-Button.displayName = "Button";
+Button.displayName = 'Button';
 
-export { Button };
+export { Button, buttonVariants };

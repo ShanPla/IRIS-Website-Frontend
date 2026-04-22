@@ -85,7 +85,7 @@ function LoginRoute() {
   }
 
   if (session) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/devices" replace />;
   }
 
   return <Login />;
@@ -102,7 +102,7 @@ function PostLoginLanding() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/devices" replace />;
 }
 
 export default function App() {
