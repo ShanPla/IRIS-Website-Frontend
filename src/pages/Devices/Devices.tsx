@@ -78,7 +78,7 @@ export default function Devices() {
               <span className="stats-value text-primary">{loading ? "..." : fleet?.online_nodes}</span>
             </div>
             <div className="flex flex-col border-l border-white/5 pl-6">
-              <span className="stats-label">24H Fleet Events</span>
+              <span className="stats-label">Today's Fleet Events</span>
               <span className="stats-value text-tertiary">{loading ? "..." : fleet?.total_events_today}</span>
             </div>
           </div>
@@ -170,7 +170,7 @@ function NodeInventoryCard({ node, index }: { node: PiNodeStatus; index: number 
               <div className="flex items-center gap-2">
                 <Activity size={14} className="text-slate-500" />
                 <div>
-                  <p className="text-[8px] uppercase text-slate-500">24H Activity</p>
+                  <p className="text-[8px] uppercase text-slate-500">Today's Activity</p>
                   <p className="text-xs text-white font-mono">{node.total_events_today} events</p>
                 </div>
               </div>

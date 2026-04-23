@@ -88,6 +88,7 @@ export interface PiNodeStatus {
 export interface FleetStatus {
   total_nodes: number;
   online_nodes: number;
+  total_events: number;
   total_events_today: number;
   total_faces: number;
   nodes: PiNodeStatus[];

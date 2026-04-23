@@ -61,7 +61,7 @@ export default function Dashboard() {
     return {
         onlineDevices: onlineDevicesCount,
         offlineDevices: offlineDevicesCount,
-        totalDetections: fleet?.total_events_today ?? 0,
+        totalDetections: fleet?.total_events ?? 0,
         totalFaces: fleet?.total_faces ?? registrySummary.totalFaces,
         activeHomeowners: registrySummary.activeHomeowners,
         totalHomeowners: registrySummary.totalHomeowners,
