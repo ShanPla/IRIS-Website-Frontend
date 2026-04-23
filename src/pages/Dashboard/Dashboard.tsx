@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { 
-  ShieldAlert, 
-  RefreshCw, 
-  Activity, 
+import {
+  RefreshCw,
+  Activity,
   Radio,
   Server,
   Users,
@@ -12,53 +11,32 @@ import {
 } from "lucide-react";
 import { apiClient } from "../../lib/api";
 import { summarizeRegistryAccounts } from "../../lib/accountRegistry";
-import type { FleetStatus, PiNodeStatus, AppUserAccount, AdminSystemStats } from "../../types/iris";
+import type { FleetStatus, PiNodeStatus, AppUserAccount } from "../../types/iris";
 import "./Dashboard.css";
 
 export default function Dashboard() {
   const [fleet, setFleet] = useState<FleetStatus | null>(null);
   const [accounts, setAccounts] = useState<AppUserAccount[]>([]);
-  const [systemStats, setSystemStats] = useState<AdminSystemStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [statsWarning, setStatsWarning] = useState("");
 
   const loadData = async (options?: { silent?: boolean }) => {
     if (options?.silent) setRefreshing(true);
     else setLoading(true);
     setError("");
-    setStatsWarning("");
 
     try {
-      const [fleetResult, accountsResult, statsResult] = await Promise.allSettled([
+      const [fleetRes, accountsRes] = await Promise.all([
         apiClient.get<FleetStatus>("/api/fleet/status"),
         apiClient.get<AppUserAccount[]>("/api/auth/admin/app-users"),
-        apiClient.get<AdminSystemStats>("/api/admin/stats"),
       ]);
-
-      const fleetLoaded = fleetResult.status === "fulfilled";
-      const accountsLoaded = accountsResult.status === "fulfilled";
-      const statsLoaded = statsResult.status === "fulfilled";
-
-      if (fleetLoaded) {
-        setFleet(fleetResult.value.data);
-      }
-
-      if (accountsLoaded) {
-        const accountsData = Array.isArray(accountsResult.value.data) ? accountsResult.value.data : [];
-        setAccounts(accountsData);
-      }
-
-      if (statsLoaded) {
-        setSystemStats(statsResult.value.data);
-      } else {
-        setStatsWarning("Overview totals are using fallback values because admin stats could not be loaded.");
-      }
-
-      if (!fleetLoaded && !accountsLoaded) {
-        setError("Failed to synchronize with central cloud registry.");
-      }
+      
+      const fleetData = fleetRes.data;
+      const accountsData = Array.isArray(accountsRes.data) ? accountsRes.data : [];
+      
+      setFleet(fleetData);
+      setAccounts(accountsData);
     } catch {
       setError("Failed to synchronize with central cloud registry.");
     } finally {
@@ -83,13 +61,13 @@ export default function Dashboard() {
     return {
         onlineDevices: onlineDevicesCount,
         offlineDevices: offlineDevicesCount,
-        totalDetections: systemStats?.total_events ?? fleet?.total_events_today ?? 0,
-        totalFaces: systemStats?.total_faces ?? registrySummary.totalFaces,
+        totalDetections: fleet?.total_events_today ?? 0,
+        totalFaces: fleet?.total_faces ?? registrySummary.totalFaces,
         activeHomeowners: registrySummary.activeHomeowners,
         totalHomeowners: registrySummary.totalHomeowners,
-        backendStatus: fleet || accounts.length > 0 ? "Online" : "Offline"
+        backendStatus: error ? "Offline" : "Online"
     };
-  }, [fleet, accounts.length, registrySummary, systemStats]);
+  }, [fleet, registrySummary, error]);
 
   return (
     <div className="dashboard-container">
@@ -122,15 +100,8 @@ export default function Dashboard() {
 
       {error && (
         <div className="bg-error/10 border border-error/20 text-error p-5 rounded-2xl mb-10 flex items-center gap-4 animate-float">
-          <ShieldAlert size={20} />
+          <Activity size={20} />
           <span className="text-sm font-medium">{error}</span>
-        </div>
-      )}
-
-      {!error && statsWarning && (
-        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 p-5 rounded-2xl mb-10 flex items-center gap-4 animate-float">
-          <ShieldAlert size={20} />
-          <span className="text-sm font-medium">{statsWarning}</span>
         </div>
       )}
 

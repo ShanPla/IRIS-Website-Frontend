@@ -80,6 +80,7 @@ export interface PiNodeStatus {
   ram_usage: number | null;
   uptime_seconds: number | null;
   total_events_today: number;
+  total_faces: number;
   status: "online" | "offline";
   last_heartbeat: string;
 }
@@ -88,17 +89,6 @@ export interface FleetStatus {
   total_nodes: number;
   online_nodes: number;
   total_events_today: number;
-  nodes: PiNodeStatus[];
-}
-
-export interface AdminSystemStats {
-  total_users: number;
-  admin_count: number;
-  homeowner_count: number;
-  invited_count: number;
-  paired_devices: number;
-  total_events: number;
   total_faces: number;
-  device_id: string;
-  device_name: string;
+  nodes: PiNodeStatus[];
 }
