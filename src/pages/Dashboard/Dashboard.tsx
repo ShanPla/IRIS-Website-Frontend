@@ -12,12 +12,13 @@ import {
 } from "lucide-react";
 import { apiClient } from "../../lib/api";
 import { summarizeRegistryAccounts } from "../../lib/accountRegistry";
-import type { FleetStatus, PiNodeStatus, AppUserAccount } from "../../types/iris";
+import type { FleetStatus, PiNodeStatus, AppUserAccount, AdminSystemStats } from "../../types/iris";
 import "./Dashboard.css";
 
 export default function Dashboard() {
   const [fleet, setFleet] = useState<FleetStatus | null>(null);
   const [accounts, setAccounts] = useState<AppUserAccount[]>([]);
+  const [systemStats, setSystemStats] = useState<AdminSystemStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -28,9 +29,10 @@ export default function Dashboard() {
     setError("");
 
     try {
-      const [fleetRes, accountsRes] = await Promise.all([
+      const [fleetRes, accountsRes, statsRes] = await Promise.all([
         apiClient.get<FleetStatus>("/api/fleet/status"),
-        apiClient.get<AppUserAccount[]>("/api/auth/admin/app-users")
+        apiClient.get<AppUserAccount[]>("/api/auth/admin/app-users"),
+        apiClient.get<AdminSystemStats>("/api/admin/stats"),
       ]);
       
       const fleetData = fleetRes.data;
@@ -38,6 +40,7 @@ export default function Dashboard() {
       
       setFleet(fleetData);
       setAccounts(accountsData);
+      setSystemStats(statsRes.data);
     } catch {
       setError("Failed to synchronize with central cloud registry.");
     } finally {
@@ -58,18 +61,17 @@ export default function Dashboard() {
     const nodes = fleet?.nodes || [];
     const onlineDevicesCount = nodes.filter(n => n.status === "online").length;
     const offlineDevicesCount = nodes.length - onlineDevicesCount;
-    const totalDetectionsCount = nodes.reduce((sum, n) => sum + n.total_events_today, 0);
 
     return {
         onlineDevices: onlineDevicesCount,
         offlineDevices: offlineDevicesCount,
-        totalDetections: totalDetectionsCount,
-        totalFaces: registrySummary.totalFaces,
+        totalDetections: systemStats?.total_events ?? fleet?.total_events_today ?? 0,
+        totalFaces: systemStats?.total_faces ?? registrySummary.totalFaces,
         activeHomeowners: registrySummary.activeHomeowners,
         totalHomeowners: registrySummary.totalHomeowners,
         backendStatus: error ? "Offline" : "Online"
     };
-  }, [fleet, registrySummary, error]);
+  }, [fleet, registrySummary, systemStats, error]);
 
   return (
     <div className="dashboard-container">

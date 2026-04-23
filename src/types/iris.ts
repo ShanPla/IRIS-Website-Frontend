@@ -90,3 +90,15 @@ export interface FleetStatus {
   total_events_today: number;
   nodes: PiNodeStatus[];
 }
+
+export interface AdminSystemStats {
+  total_users: number;
+  admin_count: number;
+  homeowner_count: number;
+  invited_count: number;
+  paired_devices: number;
+  total_events: number;
+  total_faces: number;
+  device_id: string;
+  device_name: string;
+}

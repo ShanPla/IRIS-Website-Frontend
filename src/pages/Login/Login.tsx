@@ -244,7 +244,7 @@ export default function Login() {
       setSubmitting(false);
 
       if (result.success) {
-        navigate("/devices", { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
         setError(result.error ?? "Login failed. Please verify credentials.");
       }
