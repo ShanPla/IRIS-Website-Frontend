@@ -30,6 +30,21 @@ const FOOTER_ITEMS = [
   { label: "IRIS Control Panel", tone: "muted" as const },
 ];
 
+const SHOOTING_STARS = [
+  { id: 0, top: "4%", right: "-12%", delay: "0.2s", duration: "4.8s", width: "96px", angle: "-24deg", distance: "-1520px" },
+  { id: 1, top: "9%", right: "-17%", delay: "1.3s", duration: "6.4s", width: "146px", angle: "-31deg", distance: "-1880px" },
+  { id: 2, top: "14%", right: "-11%", delay: "2.1s", duration: "5.3s", width: "112px", angle: "-21deg", distance: "-1640px" },
+  { id: 3, top: "18%", right: "-19%", delay: "2.8s", duration: "7.2s", width: "178px", angle: "-35deg", distance: "-2040px" },
+  { id: 4, top: "22%", right: "-13%", delay: "3.6s", duration: "5.9s", width: "88px", angle: "-27deg", distance: "-1480px" },
+  { id: 5, top: "27%", right: "-16%", delay: "4.4s", duration: "8.4s", width: "198px", angle: "-19deg", distance: "-2140px" },
+  { id: 6, top: "31%", right: "-10%", delay: "5.1s", duration: "6.1s", width: "122px", angle: "-33deg", distance: "-1760px" },
+  { id: 7, top: "36%", right: "-18%", delay: "5.9s", duration: "4.6s", width: "104px", angle: "-23deg", distance: "-1580px" },
+  { id: 8, top: "41%", right: "-14%", delay: "6.5s", duration: "7.7s", width: "166px", angle: "-29deg", distance: "-1960px" },
+  { id: 9, top: "7%", right: "-20%", delay: "7.2s", duration: "5.6s", width: "134px", angle: "-18deg", distance: "-1820px" },
+  { id: 10, top: "25%", right: "-15%", delay: "7.7s", duration: "6.9s", width: "184px", angle: "-34deg", distance: "-2180px" },
+  { id: 11, top: "43%", right: "-12%", delay: "8.4s", duration: "5.1s", width: "116px", angle: "-26deg", distance: "-1680px" },
+] as const;
+
 type HlsInstance = {
   loadSource: (source: string) => void;
   attachMedia: (media: HTMLMediaElement) => void;
@@ -66,20 +81,6 @@ export default function Login() {
   const [videoReady, setVideoReady] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [marqueeDistance, setMarqueeDistance] = useState(0);
-
-  // Randomized Shooting Stars
-  const stars = useMemo(() => {
-    return Array.from({ length: 12 }).map((_, i) => ({
-      id: i,
-      top: `${Math.random() * 45}%`,
-      right: `${-10 - Math.random() * 10}%`,
-      delay: `${Math.random() * 8}s`, // Reduced delay from 12s to 8s
-      duration: `${4 + Math.random() * 5}s`, // Slightly faster travel time
-      width: `${80 + Math.random() * 120}px`,
-      angle: `${150 + Math.random() * 20}deg`,
-      distance: `-${1400 + Math.random() * 800}px`,
-    }));
-  }, []);
 
   const configuredBackendUrl = useMemo(
     () => normalizeBackendUrl(getStoredBackendUrl() ?? ""),
@@ -277,7 +278,7 @@ export default function Login() {
         <div className="login-page__starfield" />
 
         <div className="login-page__shooting-stars">
-          {stars.map((star) => (
+          {SHOOTING_STARS.map((star) => (
             <span
               key={star.id}
               className="login-page__shooting-star"
@@ -289,8 +290,7 @@ export default function Login() {
                   "--star-duration": star.duration,
                   "--star-width": star.width,
                   "--star-angle": star.angle,
-                  "--star-x": star.x,
-                  "--star-y": star.y,
+                  "--star-distance": star.distance,
                 } as CSSProperties
               }
             />
