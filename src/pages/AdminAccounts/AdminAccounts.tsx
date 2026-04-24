@@ -167,16 +167,13 @@ export default function AdminAccounts() {
                 </div>
 
                 <div className="block-actions">
-                  <button type="button" className="block-btn">
-                    <Activity size={14} className="mr-2" /> Audit
-                  </button>
                   {deleteConfirm === account.id ? (
                     <div className="flex-1 flex gap-2">
                          <button type="button" className="block-btn danger flex-1" onClick={() => void handleDelete(account.id)}>Confirm</button>
                          <button type="button" className="block-btn w-12" onClick={() => setDeleteConfirm(null)} aria-label="Cancel revoke"><X size={14} /></button>
                     </div>
                   ) : (
-                    <button type="button" className="block-btn danger" onClick={() => setDeleteConfirm(account.id)}>
+                    <button type="button" className="block-btn danger w-full" onClick={() => setDeleteConfirm(account.id)}>
                       <Trash2 size={14} className="mr-2" /> Revoke
                     </button>
                   )}

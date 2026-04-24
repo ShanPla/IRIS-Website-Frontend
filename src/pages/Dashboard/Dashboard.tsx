@@ -180,15 +180,11 @@ export default function Dashboard() {
         <div className="node-card-cinematic">
           <p className="text-[10px] uppercase text-primary mb-3 font-bold tracking-widest">Fleet Intelligence Report</p>
           <p className="text-base text-slate-300 font-serif italic leading-relaxed mb-8 opacity-80">
-            "IRIS global mesh is currently operating with <strong>{stats.onlineDevices} online nodes</strong>. 
-            There are <strong>{stats.totalHomeowners} homeowners</strong> registered across the cluster. 
+            "IRIS global mesh is currently operating with <strong>{stats.onlineDevices} online nodes</strong>.
+            There are <strong>{stats.totalHomeowners} homeowners</strong> registered across the cluster.
             System integrity is currently reported as <strong>{stats.backendStatus}</strong>."
           </p>
-          <button className="block-btn w-full h-12 bg-white/5 border-white/10 hover:bg-primary/10 hover:text-primary">
-            Download Core Audit Log
-          </button>
-        </div>
-
+          </div>
         <div className="node-card-cinematic border-l-2 border-tertiary">
             <div className="flex items-center gap-4 mb-6">
                 <Server className="text-tertiary" size={20} />
