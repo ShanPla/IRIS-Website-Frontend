@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Sidebar from "./components/layout/Sidebar/Sidebar";
@@ -35,6 +35,7 @@ function AmbientBackdrop() {
 
 function AdminLayout({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="admin-shell">
@@ -46,7 +47,11 @@ function AdminLayout({ children }: { children: ReactNode }) {
       <div className="admin-shell__frame">
         <Sidebar mobileOpen={mobileNavOpen} onCloseMobile={() => setMobileNavOpen(false)} />
         <div className="admin-shell__main">
-          <main className="admin-shell__content">{children}</main>
+          <main className="admin-shell__content">
+            <div key={location.pathname} className="page-transition-content">
+              {children}
+            </div>
+          </main>
         </div>
       </div>
     </div>
@@ -72,7 +77,8 @@ function ProtectedRedirect({ to }: { to: string }) {
 function AppBoot() {
   return (
     <div className="app-boot">
-      <p className="app-boot__label">Loading session...</p>
+      <div className="app-boot__spinner" />
+      <p className="app-boot__label">Initializing session</p>
     </div>
   );
 }
